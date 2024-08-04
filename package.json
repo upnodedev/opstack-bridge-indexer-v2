@@ -1,0 +1,25 @@
+{
+  "name": "event-indexer-new",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "nodemon",
+    "db": "node dist/init.js",
+    "build": "rimraf dist && tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^22.1.0",
+    "nodemon": "^3.1.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^5.7.2",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
+    "viem": "^2.18.8"
+  }
+}
