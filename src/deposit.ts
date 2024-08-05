@@ -60,13 +60,13 @@ async function main() {
     const currentBlock = await publicClientL1.getBlockNumber();
 
     if (currentBlock > fromBlock && currentBlock < toBlock) {
-      fromBlock = BigInt(currentBlock - 100n);
+      fromBlock = currentBlock - 100n;
       sleepTime = 10000;
     }
 
     // check if toBlock is greater than current block
     if (toBlock > BigInt(currentBlock)) {
-      toBlock = BigInt(currentBlock);
+      toBlock = currentBlock;
     }
 
     try {
@@ -80,3 +80,8 @@ async function main() {
 }
 
 main();
+
+// 6443895    6443908
+// 6443818
+
+// 6443823
