@@ -66,3 +66,15 @@ export interface EventDeposit {
   addressContract: string;
   version: string;
 }
+
+export interface EventWithdrawal {
+  l1Token: string;
+  l2Token: string;
+  from: string;
+  to: string;
+  amount: string;
+  extraData: string;
+  transactionHash: string;
+  blockNumber: number;
+  addressContract: string;
+}

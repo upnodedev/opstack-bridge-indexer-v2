@@ -171,3 +171,14 @@ export const connectDb = async () => {
     driver: sqlite3.Database,
   });
 };
+
+export function findRange(x: number, n: number) {
+  const lowerBound = Math.floor(x / n) * n;
+  const upperBound = Math.ceil(x / n) * n;
+
+  if (x % n === 0) {
+    return [lowerBound - n, upperBound];
+  } else {
+    return [lowerBound, upperBound];
+  }
+}
