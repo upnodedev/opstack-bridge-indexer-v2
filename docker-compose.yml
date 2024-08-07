@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: event-indexer-new
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000" # Adjust the port as necessary
+    restart: unless-stopped

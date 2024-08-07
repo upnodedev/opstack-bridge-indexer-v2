@@ -6,7 +6,8 @@
     "db": "node dist/init.js",
     "build": "rimraf dist && tsc",
     "deposit": "node dist/deposit.js",
-    "withdrawal": "node dist/withdrawal.js"
+    "withdrawal": "node dist/withdrawal.js",
+    "server": "node dist/server.js"
   },
   "author": "",
   "license": "ISC",
@@ -18,8 +19,10 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "ethers": "^5.7.2",
+    "express": "^4.19.2",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "viem": "^2.18.8"
