@@ -15,9 +15,3 @@ COPY . .
 
 # Build the project
 RUN npm run build
-
-# init db
-RUN npm run db
-
-# Make the default command to run a simple shell script
-CMD ["sh", "/app/run.sh"]

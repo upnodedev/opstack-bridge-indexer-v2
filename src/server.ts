@@ -1,24 +1,20 @@
 // src/app.ts
 
 import express, { Request, Response } from 'express';
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
 import cors from 'cors';
 import { ENV } from './constant';
+import { connectDb, testConnection } from './utils';
+import { Pool } from 'pg';
 
 // Create express app
 const app = express();
 const PORT = 3000 || ENV.PORT;
 
-// Open database
-async function openDb() {
-  return open({
-    filename: './database/db.db',
-    driver: sqlite3.Database,
-  });
-}
-
 app.use(express.json());
+
+const db = new Pool({
+  connectionString: ENV.DATABASE_URL,
+});
 
 // Define your CORS options
 const corsOptions = {
@@ -32,70 +28,77 @@ app.use(cors(corsOptions));
 
 // Endpoint to fetch data with cursor and optional filter
 // prevent SQL injection
+// Function to query deposits
 app.get('/deposit', async (req: Request, res: Response) => {
   try {
-    const db = await openDb();
+    const client = await db.connect();
     const limit = parseInt(req.query.limit as string) || 10; // Validate and default to 10 if invalid
-    const from = req.query.from || '';
-    const to = req.query.to || '';
+    const from = (req.query.from as string) || '';
+    const to = (req.query.to as string) || '';
 
     let query = 'SELECT * FROM deposit';
     const params: (string | number)[] = [];
 
     if (from && to) {
-      query += ' WHERE "from" = ? AND "to" = ?'; // Escaping column names
+      query += ' WHERE "from" = $1 AND "to" = $2';
       params.push(from, to);
     } else if (from) {
-      query += ' WHERE "from" = ?'; // Escaping column name
+      query += ' WHERE "from" = $1';
       params.push(from);
     } else if (to) {
-      query += ' WHERE "to" = ?'; // Escaping column name
+      query += ' WHERE "to" = $1';
       params.push(to);
     }
 
-    query += ' ORDER BY blockNumber DESC LIMIT ?';
+    query += ' ORDER BY blockNumber DESC LIMIT $' + (params.length + 1);
     params.push(limit);
 
-    const data = await db.all(query, params);
-    res.json(data);
+    const result = await client.query(query, params);
+    res.json(result.rows);
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });
+  } finally {
+    await db.end(); // Ensure the client is released
   }
 });
 
 app.get('/withdrawal', async (req: Request, res: Response) => {
   try {
-    const db = await openDb();
+    const client = await db.connect();
     const limit = parseInt(req.query.limit as string) || 10; // Validate and default to 10 if invalid
-    const from = req.query.from || '';
-    const to = req.query.to || '';
+    const from = (req.query.from as string) || '';
+    const to = (req.query.to as string) || '';
 
     let query = 'SELECT * FROM withdrawal';
     const params: (string | number)[] = [];
 
     if (from && to) {
-      query += ' WHERE "from" = ? AND "to" = ?'; // Escaping column names
+      query += ' WHERE "from" = $1 AND "to" = $2';
       params.push(from, to);
     } else if (from) {
-      query += ' WHERE "from" = ?'; // Escaping column name
+      query += ' WHERE "from" = $1';
       params.push(from);
     } else if (to) {
-      query += ' WHERE "to" = ?'; // Escaping column name
+      query += ' WHERE "to" = $1';
       params.push(to);
     }
 
-    query += ' ORDER BY blockNumber DESC LIMIT ?';
+    query += ' ORDER BY blockNumber DESC LIMIT $' + (params.length + 1);
     params.push(limit);
 
-    const data = await db.all(query, params);
-    res.json(data);
+    const result = await client.query(query, params);
+    res.json(result.rows);
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });
+  } finally {
+    await db.end(); // Ensure the client is released
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  console.log(ENV.DATABASE_URL)
+  await testConnection(db);
   console.log(`Server running on http://localhost:${PORT}`);
 });

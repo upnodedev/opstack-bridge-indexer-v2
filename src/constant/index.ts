@@ -20,4 +20,6 @@ export const ENV = {
     +process.env.L2_STANDARD_BRIDGE_BLOCK_CREATED,
 
   PORT: +process.env.PORT || 3000,
+
+  DATABASE_URL: process.env.DATABASE_URL,
 };

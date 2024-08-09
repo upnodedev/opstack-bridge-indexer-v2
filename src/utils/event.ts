@@ -1,3 +1,4 @@
+import { Pool } from 'pg';
 import { insertEventDeposit, insertEventWithdraw } from '.';
 import { L2StandardBridgeABI } from '../abi/L2StandardBridgeABI';
 import { portalABI } from '../abi/portalABI';
@@ -7,7 +8,7 @@ import { EventDeposit, EventWithdrawal } from './types';
 
 // Fetch past events and index them
 export const fetchEventDeposit = async (
-  db: any,
+  db: Pool,
   fromBlock: bigint,
   toBlock: bigint
 ) => {
@@ -87,20 +88,20 @@ export const fetchEventWithdrawal = async (
   console.log(`Fetched withdrawal ${logs.length} events`);
 };
 
-export const getLastEventDeposit = async (db: any): Promise<EventDeposit> => {
-  const stmt = await db.prepare(
-    `SELECT * FROM deposit ORDER BY blockNumber DESC LIMIT 1`
+export const getLastEventDeposit = async (db: Pool): Promise<EventDeposit> => {
+  const client = await db.connect();
+  const result = await client.query<EventDeposit>(
+    'SELECT * FROM deposit ORDER BY blockNumber DESC LIMIT 1'
   );
-  const row = await stmt.get();
-  return row;
+  return result.rows[0];
 };
 
 export const getLastEventWithdrawal = async (
-  db: any
+  db: Pool
 ): Promise<EventWithdrawal> => {
-  const stmt = await db.prepare(
-    `SELECT * FROM withdrawal ORDER BY blockNumber DESC LIMIT 1`
+  const client = await db.connect();
+  const result = await client.query<EventWithdrawal>(
+    'SELECT * FROM withdraw ORDER BY blockNumber DESC LIMIT 1'
   );
-  const row = await stmt.get();
-  return row;
+  return result.rows[0];
 };

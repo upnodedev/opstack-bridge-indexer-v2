@@ -1,6 +1,7 @@
+import { Pool } from 'pg';
 import { portalABI } from './abi/portalABI';
 import { ENV } from './constant';
-import { connectDb, findRange } from './utils';
+import { connectDb, findRange, testConnection } from './utils';
 import { publicClientL1 } from './utils/chain';
 import { fetchEventDeposit, getLastEventDeposit } from './utils/event';
 const sleep = require('util').promisify(setTimeout);
@@ -11,7 +12,9 @@ const LIMIT_BLOCK = [50000, 40000, 30000, 20000, 10000];
 let sleepTime = 100;
 
 async function main() {
-  const db = await connectDb();
+  const db = connectDb();
+  await testConnection(db);
+
   let LIMIT = 0;
 
   // check limit block

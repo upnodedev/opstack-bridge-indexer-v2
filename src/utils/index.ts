@@ -1,11 +1,8 @@
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
+import { Pool, PoolClient } from 'pg';
 import { decodeOpqdata } from './decodeOpaquedata';
+import { ENV } from '../constant';
 
 const sleep = require('util').promisify(setTimeout);
-
-// Define the SQLite database file
-const dbFile = './database/db.db';
 
 export const formatSeconds = (seconds: number) => {
   // format seconds to human readable format
@@ -72,36 +69,44 @@ export const insertEventWithdraw = async (db, event) => {
     blockNumber,
     address,
   } = event;
+
+  const client = await db.connect();
+
   try {
-    const stmt = await db.prepare(
-      'INSERT INTO withdrawal (l1Token, l2Token, "from", "to", amount, extraData, transactionHash, blockNumber, addressContract) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    );
-    await stmt.run(
-      l1Token,
-      l2Token,
+    const query = `
+      INSERT INTO withdraw (
+        transactionHash, 
+        "from", 
+        "to", 
+        amount, 
+        extraData, 
+        blockNumber, 
+        addressContract, 
+        l1Token, 
+        l2Token
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
+
+    const value = [
+      transactionHash,
       from,
       to,
       amount,
       extraData,
-      transactionHash,
       blockNumber,
-      address
-    );
+      address,
+      l1Token,
+      l2Token,
+    ];
+
+    await client.query(query, value);
   } catch (err) {
     console.error('Failed to insert event:', err);
+  } finally {
+    client.release();
   }
 };
 
-export const insertEventDeposit = async (db, event) => {
-  // const {
-  //   from,
-  //   to,
-  //   version,
-  //   opaqueData,
-  //   transactionHash,
-  //   address,
-  //   blockNumber,
-  // } = event;
+export const insertEventDeposit = async (db: Pool, event) => {
   const decodeOpaque = decodeOpqdata(event.opaqueData);
 
   const transactionHash = event.transactionHash;
@@ -130,9 +135,11 @@ export const insertEventDeposit = async (db, event) => {
     isEth = false;
   }
 
+  const client = await db.connect();
+
   try {
-    const stmt = await db.prepare(
-      `INSERT INTO deposit (
+    const query = `
+      INSERT INTO deposit (
         transactionHash, 
         "from", 
         "to", 
@@ -144,9 +151,9 @@ export const insertEventDeposit = async (db, event) => {
         blockNumber, 
         addressContract, 
         version
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    );
-    await stmt.run(
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`;
+
+    const value = [
       transactionHash,
       from,
       to,
@@ -157,18 +164,21 @@ export const insertEventDeposit = async (db, event) => {
       localToken,
       blockNumber,
       addressContract,
-      version
-    );
+      version,
+    ];
+
+    await client.query(query, value);
   } catch (err) {
     console.error('Failed to insert event:', err);
+  } finally {
+    client.release();
   }
 };
 
 // Connect to the SQLite database
-export const connectDb = async () => {
-  return open({
-    filename: dbFile,
-    driver: sqlite3.Database,
+export const connectDb = () => {
+  return new Pool({
+    connectionString: ENV.DATABASE_URL,
   });
 };
 
@@ -182,3 +192,16 @@ export function findRange(x: number, n: number) {
     return [lowerBound, upperBound];
   }
 }
+
+// Function to test the database connection
+export const testConnection = async (pool: Pool): Promise<void> => {
+  let client: PoolClient | undefined;
+  try {
+    client = await pool.connect();
+    console.log('Connected to the database successfully.');
+  } catch (err) {
+    throw err;
+  } finally {
+    client?.release();
+  }
+};
