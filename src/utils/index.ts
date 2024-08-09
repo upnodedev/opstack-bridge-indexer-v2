@@ -74,10 +74,10 @@ export const insertEventWithdraw = async (db, event) => {
 
   try {
     const query = `
-      INSERT INTO withdraw (
+      INSERT INTO withdrawal (
         transactionHash, 
-        "from", 
-        "to", 
+        sender, 
+        receiver,  
         amount, 
         extraData, 
         blockNumber, 
@@ -141,15 +141,15 @@ export const insertEventDeposit = async (db: Pool, event) => {
     const query = `
       INSERT INTO deposit (
         transactionHash, 
-        "from", 
-        "to", 
+        sender, 
+        receiver, 
         amount,
-        isEth,
-        extraData,
-        remoteToken,
-        localToken,
-        blockNumber, 
-        addressContract, 
+        iseth,
+        extradata,
+        remotetoken,
+        localtoken,
+        blocknumber, 
+        addresscontract, 
         version
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`;
 
@@ -166,6 +166,8 @@ export const insertEventDeposit = async (db: Pool, event) => {
       addressContract,
       version,
     ];
+
+    console.log(value);
 
     await client.query(query, value);
   } catch (err) {

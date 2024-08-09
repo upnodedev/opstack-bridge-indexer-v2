@@ -33,21 +33,21 @@ app.get('/deposit', async (req: Request, res: Response) => {
   try {
     const client = await db.connect();
     const limit = parseInt(req.query.limit as string) || 10; // Validate and default to 10 if invalid
-    const from = (req.query.from as string) || '';
-    const to = (req.query.to as string) || '';
+    const sender = (req.query.sender as string) || '';
+    const receiver = (req.query.receiver as string) || '';
 
     let query = 'SELECT * FROM deposit';
     const params: (string | number)[] = [];
 
-    if (from && to) {
-      query += ' WHERE "from" = $1 AND "to" = $2';
-      params.push(from, to);
-    } else if (from) {
-      query += ' WHERE "from" = $1';
-      params.push(from);
-    } else if (to) {
-      query += ' WHERE "to" = $1';
-      params.push(to);
+    if (sender && receiver) {
+      query += ' WHERE "sender" = $1 AND "receiver" = $2';
+      params.push(sender, receiver);
+    } else if (sender) {
+      query += ' WHERE "sender" = $1';
+      params.push(sender);
+    } else if (receiver) {
+      query += ' WHERE "receiver" = $1';
+      params.push(receiver);
     }
 
     query += ' ORDER BY blockNumber DESC LIMIT $' + (params.length + 1);
@@ -67,21 +67,21 @@ app.get('/withdrawal', async (req: Request, res: Response) => {
   try {
     const client = await db.connect();
     const limit = parseInt(req.query.limit as string) || 10; // Validate and default to 10 if invalid
-    const from = (req.query.from as string) || '';
-    const to = (req.query.to as string) || '';
+    const sender = (req.query.sender as string) || '';
+    const receiver = (req.query.receiver as string) || '';
 
     let query = 'SELECT * FROM withdrawal';
     const params: (string | number)[] = [];
 
-    if (from && to) {
-      query += ' WHERE "from" = $1 AND "to" = $2';
-      params.push(from, to);
-    } else if (from) {
-      query += ' WHERE "from" = $1';
+    if (sender && receiver) {
+      query += ' WHERE "sender" = $1 AND "receiver" = $2';
+      params.push(sender, receiver);
+    } else if (sender) {
+      query += ' WHERE "sender" = $1';
       params.push(from);
-    } else if (to) {
-      query += ' WHERE "to" = $1';
-      params.push(to);
+    } else if (receiver) {
+      query += ' WHERE "receiver" = $1';
+      params.push(receiver);
     }
 
     query += ' ORDER BY blockNumber DESC LIMIT $' + (params.length + 1);
@@ -98,7 +98,6 @@ app.get('/withdrawal', async (req: Request, res: Response) => {
 });
 
 app.listen(PORT, async () => {
-  console.log(ENV.DATABASE_URL)
   await testConnection(db);
   console.log(`Server running on http://localhost:${PORT}`);
 });

@@ -101,7 +101,7 @@ export const getLastEventWithdrawal = async (
 ): Promise<EventWithdrawal> => {
   const client = await db.connect();
   const result = await client.query<EventWithdrawal>(
-    'SELECT * FROM withdraw ORDER BY blockNumber DESC LIMIT 1'
+    'SELECT * FROM withdrawal ORDER BY blockNumber DESC LIMIT 1'
   );
   return result.rows[0];
 };

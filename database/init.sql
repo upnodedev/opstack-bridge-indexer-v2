@@ -2,13 +2,13 @@
 
     CREATE TABLE IF NOT EXISTS deposit (
       transactionHash TEXT PRIMARY KEY,
-      "from" TEXT,
-      "to" TEXT,
-      "amount" TEXT,
-      "isEth" BOOLEAN,
-      "extraData" TEXT,
-      "remoteToken" TEXT,
-      "localToken" TEXT,
+      sender TEXT,         -- Instead of "from"
+      receiver TEXT,       -- Instead of "to"
+      amount TEXT,
+      isEth BOOLEAN,
+      extraData TEXT,
+      remoteToken TEXT,
+      localToken TEXT,
       blockNumber INTEGER,
       addressContract TEXT,
       version TEXT
@@ -17,8 +17,8 @@
     CREATE TABLE IF NOT EXISTS withdrawal (
       l1Token TEXT,
       l2Token TEXT,
-      "from" TEXT,
-      "to" TEXT,
+      sender TEXT,
+      receiver TEXT,
       amount TEXT,
       extraData TEXT,
       transactionHash TEXT PRIMARY KEY,
@@ -26,10 +26,10 @@
       addressContract TEXT
     );
 
-    CREATE INDEX IF NOT EXISTS deposit_from_index ON deposit ("from");
-    CREATE INDEX IF NOT EXISTS deposit_to_index ON deposit ("to");
+    CREATE INDEX IF NOT EXISTS deposit_sender_index ON deposit (sender);
+    CREATE INDEX IF NOT EXISTS deposit_receiver_index ON deposit (receiver);
 
-    CREATE INDEX IF NOT EXISTS withdrawal_from_index ON withdrawal ("from");
-    CREATE INDEX IF NOT EXISTS withdrawal_to_index ON withdrawal ("to");
+    CREATE INDEX IF NOT EXISTS withdrawal_sender_index ON withdrawal (sender);
+    CREATE INDEX IF NOT EXISTS withdrawal_receiver_index ON withdrawal (receiver);
 
     COMMIT;

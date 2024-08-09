@@ -3,6 +3,7 @@ version: '3.8'
 services:
   db:
     image: postgres:13
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -16,74 +17,80 @@ services:
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     ports:
       - '5432:5432'
+    networks:
+      - mynetwork
 
-  deposit:
-    build: .
-    depends_on:
-      - db
-    environment:
-      DATABASE_URL: postgres://${APP_DB_USER}:${APP_DB_PASSWORD}@db:5432/${POSTGRES_DB}
-      L1_RPC_URL_1 : ${L1_RPC_URL_1}
-      L1_RPC_URL_2 : ${L1_RPC_URL_2}
-      L1_RPC_URL_3 : ${L1_RPC_URL_3}
-      L1_CHAIN_NAME : ${L1_CHAIN_NAME}
-      L1_CHAIN_ID : ${L1_CHAIN_ID}
-      L1_PORTAL_ADDRESS : ${L1_PORTAL_ADDRESS}
-      L1_PORTAL_BLOCK_CREATED : ${L1_PORTAL_BLOCK_CREATED}
-      L2_RPC_URL_1 : ${L2_RPC_URL_1}
-      L2_RPC_URL_2 : ${L2_RPC_URL_2}
-      L2_RPC_URL_3 : ${L2_RPC_URL_3}
-      L2_CHAIN_NAME : ${L2_CHAIN_NAME}
-      L2_CHAIN_ID : ${L2_CHAIN_ID}
-      L2_STANDARD_BRIDGE_ADDRESS : ${L2_STANDARD_BRIDGE_ADDRESS}
-      L2_STANDARD_BRIDGE_BLOCK_CREATED : ${L2_STANDARD_BRIDGE_BLOCK_CREATED}
-    command: ['npm', 'run', 'deposit']
-  
-  withdraw:
-    build: .
-    depends_on:
-      - db
-    environment:
-      DATABASE_URL: postgres://${APP_DB_USER}:${APP_DB_PASSWORD}@db:5432/${POSTGRES_DB}
-      L1_RPC_URL_1 : ${L1_RPC_URL_1}
-      L1_RPC_URL_2 : ${L1_RPC_URL_2}
-      L1_RPC_URL_3 : ${L1_RPC_URL_3}
-      L1_CHAIN_NAME : ${L1_CHAIN_NAME}
-      L1_CHAIN_ID : ${L1_CHAIN_ID}
-      L1_PORTAL_ADDRESS : ${L1_PORTAL_ADDRESS}
-      L1_PORTAL_BLOCK_CREATED : ${L1_PORTAL_BLOCK_CREATED}
-      L2_RPC_URL_1 : ${L2_RPC_URL_1}
-      L2_RPC_URL_2 : ${L2_RPC_URL_2}
-      L2_RPC_URL_3 : ${L2_RPC_URL_3}
-      L2_CHAIN_NAME : ${L2_CHAIN_NAME}
-      L2_CHAIN_ID : ${L2_CHAIN_ID}
-      L2_STANDARD_BRIDGE_ADDRESS : ${L2_STANDARD_BRIDGE_ADDRESS}
-      L2_STANDARD_BRIDGE_BLOCK_CREATED : ${L2_STANDARD_BRIDGE_BLOCK_CREATED}
-    command: ['npm', 'run', 'withdrawal']
+  # deposit:
+  #   build: .
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     DATABASE_URL: postgres://${APP_DB_USER}:${APP_DB_PASSWORD}@db:5432/${POSTGRES_DB}
+  #     L1_RPC_URL_1 : ${L1_RPC_URL_1}
+  #     L1_RPC_URL_2 : ${L1_RPC_URL_2}
+  #     L1_RPC_URL_3 : ${L1_RPC_URL_3}
+  #     L1_CHAIN_NAME : ${L1_CHAIN_NAME}
+  #     L1_CHAIN_ID : ${L1_CHAIN_ID}
+  #     L1_PORTAL_ADDRESS : ${L1_PORTAL_ADDRESS}
+  #     L1_PORTAL_BLOCK_CREATED : ${L1_PORTAL_BLOCK_CREATED}
+  #     L2_RPC_URL_1 : ${L2_RPC_URL_1}
+  #     L2_RPC_URL_2 : ${L2_RPC_URL_2}
+  #     L2_RPC_URL_3 : ${L2_RPC_URL_3}
+  #     L2_CHAIN_NAME : ${L2_CHAIN_NAME}
+  #     L2_CHAIN_ID : ${L2_CHAIN_ID}
+  #     L2_STANDARD_BRIDGE_ADDRESS : ${L2_STANDARD_BRIDGE_ADDRESS}
+  #     L2_STANDARD_BRIDGE_BLOCK_CREATED : ${L2_STANDARD_BRIDGE_BLOCK_CREATED}
+  #   command: ["./wait-for-it.sh", "db:5432", "--",'npm', 'run', 'deposit']
+  #   networks:
+  #       - mynetwork
+  #   stdin_open: true
+  #   tty: true
+
+  # withdraw:
+  #   build: .
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - db
+  #   environment:
+  #     DATABASE_URL: postgres://${APP_DB_USER}:${APP_DB_PASSWORD}@db:5432/${POSTGRES_DB}
+  #     L1_RPC_URL_1 : ${L1_RPC_URL_1}
+  #     L1_RPC_URL_2 : ${L1_RPC_URL_2}
+  #     L1_RPC_URL_3 : ${L1_RPC_URL_3}
+  #     L1_CHAIN_NAME : ${L1_CHAIN_NAME}
+  #     L1_CHAIN_ID : ${L1_CHAIN_ID}
+  #     L1_PORTAL_ADDRESS : ${L1_PORTAL_ADDRESS}
+  #     L1_PORTAL_BLOCK_CREATED : ${L1_PORTAL_BLOCK_CREATED}
+  #     L2_RPC_URL_1 : ${L2_RPC_URL_1}
+  #     L2_RPC_URL_2 : ${L2_RPC_URL_2}
+  #     L2_RPC_URL_3 : ${L2_RPC_URL_3}
+  #     L2_CHAIN_NAME : ${L2_CHAIN_NAME}
+  #     L2_CHAIN_ID : ${L2_CHAIN_ID}
+  #     L2_STANDARD_BRIDGE_ADDRESS : ${L2_STANDARD_BRIDGE_ADDRESS}
+  #     L2_STANDARD_BRIDGE_BLOCK_CREATED : ${L2_STANDARD_BRIDGE_BLOCK_CREATED}
+  #   command: ["./wait-for-it.sh", "db:5432", "--",'npm', 'run', 'withdrawal']
+  #   networks:
+  #       - mynetwork
+  #   stdin_open: true
+  #   tty: true
 
   server:
     build: .
+    restart: unless-stopped
     depends_on:
       - db
     ports:
       - '3000:3000'
     environment:
       DATABASE_URL: postgres://${APP_DB_USER}:${APP_DB_PASSWORD}@db:5432/${POSTGRES_DB}
-      L1_RPC_URL_1 : ${L1_RPC_URL_1}
-      L1_RPC_URL_2 : ${L1_RPC_URL_2}
-      L1_RPC_URL_3 : ${L1_RPC_URL_3}
-      L1_CHAIN_NAME : ${L1_CHAIN_NAME}
-      L1_CHAIN_ID : ${L1_CHAIN_ID}
-      L1_PORTAL_ADDRESS : ${L1_PORTAL_ADDRESS}
-      L1_PORTAL_BLOCK_CREATED : ${L1_PORTAL_BLOCK_CREATED}
-      L2_RPC_URL_1 : ${L2_RPC_URL_1}
-      L2_RPC_URL_2 : ${L2_RPC_URL_2}
-      L2_RPC_URL_3 : ${L2_RPC_URL_3}
-      L2_CHAIN_NAME : ${L2_CHAIN_NAME}
-      L2_CHAIN_ID : ${L2_CHAIN_ID}
-      L2_STANDARD_BRIDGE_ADDRESS : ${L2_STANDARD_BRIDGE_ADDRESS}
-      L2_STANDARD_BRIDGE_BLOCK_CREATED : ${L2_STANDARD_BRIDGE_BLOCK_CREATED}
-    command: ['npm', 'run', 'server']
+    command: ['./wait-for-it.sh', 'db:5432', '--', 'npm', 'run', 'server']
+    networks:
+      - mynetwork
+    stdin_open: true
+    tty: true
 
+networks:
+  mynetwork:
+    driver: bridge
 # volumes:
 #   db-data:

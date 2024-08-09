@@ -7,7 +7,7 @@ export interface EventDepositLogType {
   removed: boolean;
   address: string;
   data: string;
-  topics: string[];
+  receiverpics: string[];
   transactionHash: string;
   logIndex: number;
   removeListener: Function;
@@ -23,17 +23,17 @@ export interface EventDepositLogType {
     BigNumber,
     string,
     {
-      from: string;
-      to: string;
+      sender: string;
+      receiver: string;
       version: BigNumber;
       opaqueData: string;
     }
   ];
 }
 
-export interface TransactionDepositedDto {
-  from: string;
-  to: string;
+export interface TransactionDepositedDreceiver {
+  sender: string;
+  receiver: string;
   version: string;
   opaqueData: string;
   transactionHash: string;
@@ -41,11 +41,11 @@ export interface TransactionDepositedDto {
   addressContract: string;
 }
 
-export interface TransactionWithdrawnDto {
-  l1Token: string;
-  l2Token: string;
-  from: string;
-  to: string;
+export interface TransactionWithdrawnDreceiver {
+  l1receiverken: string;
+  l2receiverken: string;
+  sender: string;
+  receiver: string;
   amount: string;
   extraData: string;
   transactionHash: string;
@@ -55,23 +55,23 @@ export interface TransactionWithdrawnDto {
 
 export interface EventDeposit {
   transactionHash: string;
-  from: string;
-  to: string;
+  sender: string;
+  receiver: string;
   amount: string;
   isEth: number;
   extraData: null;
-  remoteToken: null;
-  localToken: null;
+  remotereceiverken: null;
+  localreceiverken: null;
   blockNumber: number;
   addressContract: string;
   version: string;
 }
 
 export interface EventWithdrawal {
-  l1Token: string;
-  l2Token: string;
-  from: string;
-  to: string;
+  l1receiverken: string;
+  l2receiverken: string;
+  sender: string;
+  receiver: string;
   amount: string;
   extraData: string;
   transactionHash: string;
