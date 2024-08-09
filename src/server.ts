@@ -78,7 +78,7 @@ app.get('/withdrawal', async (req: Request, res: Response) => {
       params.push(sender, receiver);
     } else if (sender) {
       query += ' WHERE "sender" = $1';
-      params.push(from);
+      params.push(sender);
     } else if (receiver) {
       query += ' WHERE "receiver" = $1';
       params.push(receiver);
