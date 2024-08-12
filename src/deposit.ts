@@ -4,12 +4,13 @@ import { ENV } from './constant';
 import { connectDb, findRange, testConnection } from './utils';
 import { publicClientL1 } from './utils/chain';
 import { fetchEventDeposit, getLastEventDeposit } from './utils/event';
+import { InvalidParamsRpcError } from 'viem';
 const sleep = require('util').promisify(setTimeout);
 
 // const MAX_RETRIES = 5;
 // let estimateTime = 0;
-const LIMIT_BLOCK = [50000, 40000, 30000, 20000, 10000];
-let sleepTime = 100;
+const LIMIT_BLOCK = 100000000000;
+let sleepTime = 5;
 
 async function main() {
   const db = connectDb();
@@ -18,25 +19,33 @@ async function main() {
   let LIMIT = 0;
 
   // check limit block
-  for (const limitBlock of LIMIT_BLOCK) {
-    try {
-      await publicClientL1.getContractEvents({
-        address: ENV.L1_PORTAL_ADDRESS,
-        abi: portalABI,
-        eventName: 'TransactionDeposited',
-        fromBlock: BigInt(0),
-        toBlock: BigInt(limitBlock),
-      });
-      LIMIT = limitBlock;
-      console.info(`[deposit] [checking] use limit block ${limitBlock}`);
-      break;
-    } catch (error) {
-      console.error(
-        `[deposit] [checking] cannot use limit block ${limitBlock}`
-      );
+  try {
+    await publicClientL1.getContractEvents({
+      address: ENV.L1_PORTAL_ADDRESS,
+      abi: portalABI,
+      eventName: 'TransactionDeposited',
+      fromBlock: BigInt(0),
+      toBlock: BigInt(LIMIT_BLOCK),
+    });
+  } catch (error) {
+    if (error instanceof InvalidParamsRpcError) {
+      const detail = error.details;
+      // Use a regular expression to find a number followed by "block range"
+      const match = detail.match(/(\d+)\s*block\s*range/i);
+
+      if (match) {
+        const blockRangeValue = parseInt(match[1], 10);
+        console.log('Extracted block range value:', blockRangeValue);
+        LIMIT = blockRangeValue;
+      } else {
+        console.log('No block range value found in the string.');
+        throw error;
+      }
+    } else {
+      throw error;
     }
-    await sleep(100);
   }
+  await sleep(100);
 
   let fromBlock = ENV.L1_PORTAL_BLOCK_CREATED
     ? BigInt(ENV.L1_PORTAL_BLOCK_CREATED)
@@ -46,12 +55,14 @@ async function main() {
   const lastestEvent = await getLastEventDeposit(db);
 
   if (lastestEvent) {
-    fromBlock = BigInt(findRange(lastestEvent.blockNumber, LIMIT)[0]);
-    toBlock = BigInt(findRange(lastestEvent.blockNumber, LIMIT)[1]);
+    fromBlock = BigInt(lastestEvent.blocknumber);
+    // toBlock = BigInt(findRange(lastestEvent.blocknumber, LIMIT)[1]);
   }
 
   while (true) {
     const currentBlock = await publicClientL1.getBlockNumber();
+    console.log('currentBlock', currentBlock);
+    toBlock = fromBlock + BigInt(LIMIT);
 
     if (currentBlock > fromBlock && currentBlock < toBlock) {
       fromBlock = currentBlock - 100n;
@@ -69,7 +80,6 @@ async function main() {
       );
       await fetchEventDeposit(db, fromBlock, toBlock);
       fromBlock = toBlock;
-      toBlock = BigInt(toBlock) + BigInt(LIMIT);
     } catch (error) {}
     await sleep(sleepTime);
   }

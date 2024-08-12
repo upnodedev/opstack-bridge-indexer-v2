@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 
 export interface EventDepositLogType {
-  blockNumber: number;
+  blocknumber: number;
   blockHash: string;
   transactionIndex: number;
   removed: boolean;
@@ -37,7 +37,7 @@ export interface TransactionDepositedDreceiver {
   version: string;
   opaqueData: string;
   transactionHash: string;
-  blockNumber: number;
+  blocknumber: number;
   addressContract: string;
 }
 
@@ -49,7 +49,7 @@ export interface TransactionWithdrawnDreceiver {
   amount: string;
   extraData: string;
   transactionHash: string;
-  blockNumber: number;
+  blocknumber: number;
   addressContract: string;
 }
 
@@ -62,7 +62,7 @@ export interface EventDeposit {
   extraData: null;
   remotereceiverken: null;
   localreceiverken: null;
-  blockNumber: number;
+  blocknumber: number;
   addressContract: string;
   version: string;
 }
@@ -75,6 +75,6 @@ export interface EventWithdrawal {
   amount: string;
   extraData: string;
   transactionHash: string;
-  blockNumber: number;
+  blocknumber: number;
   addressContract: string;
 }

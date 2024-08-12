@@ -100,7 +100,7 @@ export const insertEventWithdraw = async (db, event) => {
 
     await client.query(query, value);
   } catch (err) {
-    console.error('Failed to insert event:', err);
+    console.info(`Duplicate event ${transactionHash}`);
   } finally {
     client.release();
   }
@@ -167,11 +167,9 @@ export const insertEventDeposit = async (db: Pool, event) => {
       version,
     ];
 
-    console.log(value);
-
     await client.query(query, value);
   } catch (err) {
-    console.error('Failed to insert event:', err);
+    console.info(`Duplicate event ${transactionHash}`);
   } finally {
     client.release();
   }
@@ -186,13 +184,9 @@ export const connectDb = () => {
 
 export function findRange(x: number, n: number) {
   const lowerBound = Math.floor(x / n) * n;
-  const upperBound = Math.ceil(x / n) * n;
+  const upperBound = lowerBound + n;
 
-  if (x % n === 0) {
-    return [lowerBound - n, upperBound];
-  } else {
-    return [lowerBound, upperBound];
-  }
+  return [lowerBound, upperBound];
 }
 
 // Function to test the database connection
