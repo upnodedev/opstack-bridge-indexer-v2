@@ -12,6 +12,10 @@ export const formatSeconds = (seconds: number) => {
   return `${hours}h ${mins}m ${secs}s`;
 };
 
+export const formatNumberWithCommas = (x: bigint) => {
+  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
 // Function to handle retries with exponential backoff
 export const attemptOperation = async (operation, retries = 3, delay = 100) => {
   let lastError = null;
@@ -174,20 +178,6 @@ export const insertEventDeposit = async (db: Pool, event) => {
     client.release();
   }
 };
-
-// Connect to the SQLite database
-export const connectDb = () => {
-  return new Pool({
-    connectionString: ENV.DATABASE_URL,
-  });
-};
-
-export function findRange(x: number, n: number) {
-  const lowerBound = Math.floor(x / n) * n;
-  const upperBound = lowerBound + n;
-
-  return [lowerBound, upperBound];
-}
 
 // Function to test the database connection
 export const testConnection = async (pool: Pool): Promise<void> => {

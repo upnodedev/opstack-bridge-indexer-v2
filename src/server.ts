@@ -3,18 +3,15 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { ENV } from './constant';
-import { connectDb, testConnection } from './utils';
+import { testConnection } from './utils';
 import { Pool } from 'pg';
+import pool from './utils/db';
 
 // Create express app
 const app = express();
 const PORT = 3000 || ENV.PORT;
 
 app.use(express.json());
-
-const db = new Pool({
-  connectionString: ENV.DATABASE_URL,
-});
 
 // Define your CORS options
 const corsOptions = {
@@ -31,7 +28,6 @@ app.use(cors(corsOptions));
 // Function to query deposits
 app.get('/deposit', async (req: Request, res: Response) => {
   try {
-    const client = await db.connect();
     const limit = parseInt(req.query.limit as string) || 10; // Validate and default to 10 if invalid
     const sender = (req.query.sender as string) || '';
     const receiver = (req.query.receiver as string) || '';
@@ -53,19 +49,16 @@ app.get('/deposit', async (req: Request, res: Response) => {
     query += ' ORDER BY blockNumber DESC LIMIT $' + (params.length + 1);
     params.push(limit);
 
-    const result = await client.query(query, params);
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });
-  } finally {
-    await db.end(); // Ensure the client is released
   }
 });
 
 app.get('/withdrawal', async (req: Request, res: Response) => {
   try {
-    const client = await db.connect();
     const limit = parseInt(req.query.limit as string) || 10; // Validate and default to 10 if invalid
     const sender = (req.query.sender as string) || '';
     const receiver = (req.query.receiver as string) || '';
@@ -87,17 +80,32 @@ app.get('/withdrawal', async (req: Request, res: Response) => {
     query += ' ORDER BY blockNumber DESC LIMIT $' + (params.length + 1);
     params.push(limit);
 
-    const result = await client.query(query, params);
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });
-  } finally {
-    await db.end(); // Ensure the client is released
   }
 });
 
+// Handle shutdown gracefully
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  pool.end(() => {
+    console.log('Database pool has ended');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  pool.end(() => {
+    console.log('Database pool has ended');
+    process.exit(0);
+  });
+});
+
 app.listen(PORT, async () => {
-  await testConnection(db);
+  await testConnection(pool);
   console.log(`Server running on http://localhost:${PORT}`);
 });

@@ -26,6 +26,30 @@
       addressContract TEXT
     );
 
+    CREATE TABLE real_time_tracker_deposit (
+    id SERIAL PRIMARY KEY,
+    last_block BIGINT NOT NULL,
+    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE past_event_deposit (
+        id SERIAL PRIMARY KEY,
+        last_block BIGINT NOT NULL,
+        processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE real_time_tracker_withdrawal (
+      id SERIAL PRIMARY KEY,
+      last_block BIGINT NOT NULL,
+      processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE past_event_deposit_withdrawal (
+        id SERIAL PRIMARY KEY,
+        last_block BIGINT NOT NULL,
+        processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE INDEX IF NOT EXISTS deposit_sender_index ON deposit (sender);
     CREATE INDEX IF NOT EXISTS deposit_receiver_index ON deposit (receiver);
 
