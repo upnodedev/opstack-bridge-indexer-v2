@@ -9,6 +9,7 @@ export const ENV = {
   L1_CHAIN_ID: +process.env.L1_CHAIN_ID,
   L1_PORTAL_ADDRESS: process.env.L1_PORTAL_ADDRESS as Address,
   L1_PORTAL_BLOCK_CREATED: +process.env.L1_PORTAL_BLOCK_CREATED,
+  L1_LIMIT_BLOCKS: +process.env.L1_LIMIT_BLOCKS,
 
   L2_RPC_URL_1: process.env.L2_RPC_URL_1,
   L2_RPC_URL_2: process.env.L2_RPC_URL_2,
@@ -18,6 +19,7 @@ export const ENV = {
   L2_STANDARD_BRIDGE_ADDRESS: process.env.L2_STANDARD_BRIDGE_ADDRESS as Address,
   L2_STANDARD_BRIDGE_BLOCK_CREATED:
     +process.env.L2_STANDARD_BRIDGE_BLOCK_CREATED,
+  L2_LIMIT_BLOCKS: +process.env.L2_LIMIT_BLOCKS,
 
   PORT: +process.env.PORT || 3000,
 

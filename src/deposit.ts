@@ -9,7 +9,7 @@ const sleep = require('util').promisify(setTimeout);
 
 // const MAX_RETRIES = 5;
 let estimateTime = 0;
-const LIMIT_BLOCK = 100000000000;
+const LIMIT_BLOCK = ENV.L1_LIMIT_BLOCKS ? Number(ENV.L1_LIMIT_BLOCKS) : 10000000;
 
 async function main() {
   await testConnection(pool);

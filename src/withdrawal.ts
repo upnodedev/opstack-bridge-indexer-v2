@@ -9,7 +9,7 @@ const sleep = require('util').promisify(setTimeout);
 
 // const MAX_RETRIES = 5;
 // let estimateTime = 0;
-const LIMIT_BLOCK = 100000000000;
+const LIMIT_BLOCK = ENV.L2_LIMIT_BLOCKS ? Number(ENV.L2_LIMIT_BLOCKS) : 10000000;
 
 async function main() {
   await testConnection(pool);
@@ -25,6 +25,8 @@ async function main() {
       fromBlock: BigInt(0),
       toBlock: BigInt(LIMIT_BLOCK),
     });
+    LIMIT = LIMIT_BLOCK;
+    console.log('Limit block:', LIMIT);
   } catch (error) {
     if (error instanceof InvalidParamsRpcError) {
       const detail = error.details;
@@ -40,6 +42,7 @@ async function main() {
         throw error;
       }
     } else {
+      console.log('Error fetching events:', error);
       throw error;
     }
   }
