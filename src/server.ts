@@ -36,7 +36,7 @@ app.get('/deposit', async (req: Request, res: Response) => {
     const params: (string | number)[] = [];
 
     if (sender && receiver) {
-      query += ' WHERE "sender" = $1 AND "receiver" = $2';
+      query += ' WHERE "sender" = $1 OR "receiver" = $2';
       params.push(sender, receiver);
     } else if (sender) {
       query += ' WHERE "sender" = $1';
@@ -67,7 +67,7 @@ app.get('/withdrawal', async (req: Request, res: Response) => {
     const params: (string | number)[] = [];
 
     if (sender && receiver) {
-      query += ' WHERE "sender" = $1 AND "receiver" = $2';
+      query += ' WHERE "sender" = $1 OR "receiver" = $2';
       params.push(sender, receiver);
     } else if (sender) {
       query += ' WHERE "sender" = $1';
