@@ -186,6 +186,7 @@ export const testConnection = async (pool: Pool): Promise<void> => {
     client = await pool.connect();
     console.log('Connected to the database successfully.');
   } catch (err) {
+    console.log('Error connecting to the database:', err);
     throw err;
   } finally {
     client?.release();

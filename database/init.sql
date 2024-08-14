@@ -32,7 +32,7 @@
     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE past_event_deposit (
+    CREATE TABLE past_event_tracker_deposit (
         id SERIAL PRIMARY KEY,
         last_block BIGINT NOT NULL,
         processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -44,7 +44,7 @@
       processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE past_event_deposit_withdrawal (
+    CREATE TABLE past_event_tracker_withdrawal (
         id SERIAL PRIMARY KEY,
         last_block BIGINT NOT NULL,
         processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

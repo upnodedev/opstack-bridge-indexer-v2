@@ -1,17 +1,14 @@
 import { Pool } from 'pg';
 import { portalABI } from './abi/portalABI';
 import { ENV } from './constant';
-import {
-  insertEventDeposit,
-  testConnection,
-} from './utils';
+import { formatSeconds, insertEventDeposit, testConnection } from './utils';
 import { publicClientL1 } from './utils/chain';
 import { InvalidParamsRpcError } from 'viem';
 import pool from './utils/db';
 const sleep = require('util').promisify(setTimeout);
 
 // const MAX_RETRIES = 5;
-// let estimateTime = 0;
+let estimateTime = 0;
 const LIMIT_BLOCK = 100000000000;
 
 async function main() {
@@ -63,9 +60,10 @@ async function getLastProcessedRealTimeBlock() {
 }
 
 async function saveLastProcessedRealTimeBlock(blockNumber) {
-  await pool.query('INSERT INTO real_time_tracker_deposit (last_block) VALUES ($1)', [
-    blockNumber.toString(),
-  ]);
+  await pool.query(
+    'INSERT INTO real_time_tracker_deposit (last_block) VALUES ($1)',
+    [blockNumber.toString()]
+  );
 }
 
 async function getLastProcessedPastBlock() {
@@ -76,9 +74,10 @@ async function getLastProcessedPastBlock() {
 }
 
 async function saveLastProcessedPastBlock(blockNumber) {
-  await pool.query('INSERT INTO past_event_tracker_deposit (last_block) VALUES ($1)', [
-    blockNumber.toString(),
-  ]);
+  await pool.query(
+    'INSERT INTO past_event_tracker_deposit (last_block) VALUES ($1)',
+    [blockNumber.toString()]
+  );
 }
 
 async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
@@ -124,24 +123,28 @@ async function fetchRealTimeEvents(BLOCK_STEP: bigint) {
     }
 
     while (true) {
-      const currentBlock =  await publicClientL1.getBlockNumber();
+      const currentBlock = await publicClientL1.getBlockNumber();
 
       while (lastProcessedBlock < currentBlock) {
         const fromBlock = lastProcessedBlock + 1n;
         const toBlock = fromBlock + BLOCK_STEP - 1n;
         const toBlockmin = toBlock < currentBlock ? toBlock : currentBlock;
 
-        console.log(`Fetching real-time events from block ${fromBlock} to ${toBlockmin}`);
+        console.log(
+          `Fetching real-time events from block ${fromBlock} to ${toBlockmin}`
+        );
 
         await getEventsLogs(fromBlock, toBlockmin);
 
         lastProcessedBlock = toBlockmin;
         await saveLastProcessedRealTimeBlock(lastProcessedBlock);
-        console.log(`Processed and saved real-time events up to block ${lastProcessedBlock}`);
+        console.log(
+          `Processed and saved real-time events up to block ${lastProcessedBlock}`
+        );
       }
 
       // Wait for a minute before checking again
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise((resolve) => setTimeout(resolve, 10000));
     }
   } catch (error) {
     console.error('Error in fetchRealTimeEvents:', error);
@@ -159,6 +162,7 @@ async function fetchPastEvents(finalBlock: bigint, BLOCK_STEP: bigint) {
     }
 
     while (fromBlock > finalBlock) {
+      const startTime = Date.now();
       const toBlock = fromBlock;
       fromBlock =
         fromBlock - BLOCK_STEP > finalBlock
@@ -173,13 +177,26 @@ async function fetchPastEvents(finalBlock: bigint, BLOCK_STEP: bigint) {
       );
 
       await saveLastProcessedPastBlock(toBlock);
-      console.log(`Processed and saved past events up to block ${toBlock}`);
 
       // Update current block in case it's changed
       currentBlock = await publicClientL1.getBlockNumber();
+      const endTime = Date.now();
+
+      // Estimate time to process the next batch
+      const timeDiff = endTime - startTime;
+
+      // estimate time to finalBlock
+      const estimateTimeToFinalBlock =
+        (BigInt(timeDiff) * (fromBlock - finalBlock)) / BLOCK_STEP;
+
+      console.log(
+        `Processed and saved past events up to block ${toBlock} , estimate time : ${formatSeconds(
+          Number(estimateTimeToFinalBlock)
+        )}`
+      );
     }
 
-    console.log('fetchPastEvents: All past events processed.');
+    console.log(`fetchPastEvents: All past events processed.`);
   } catch (error) {
     console.error('Error in fetchPastEvents:', error);
   }
