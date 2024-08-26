@@ -31,50 +31,28 @@ export interface EventDepositLogType {
   ];
 }
 
-export interface TransactionDepositedDreceiver {
-  sender: string;
-  receiver: string;
-  version: string;
-  opaqueData: string;
-  transactionHash: string;
-  blocknumber: number;
-  addressContract: string;
-}
-
-export interface TransactionWithdrawnDreceiver {
-  l1receiverken: string;
-  l2receiverken: string;
-  sender: string;
-  receiver: string;
-  amount: string;
-  extraData: string;
-  transactionHash: string;
-  blocknumber: number;
-  addressContract: string;
-}
-
 export interface EventDeposit {
-  transactionHash: string;
+  transactionhash: string;
   sender: string;
   receiver: string;
   amount: string;
-  isEth: number;
-  extraData: null;
-  remotereceiverken: null;
-  localreceiverken: null;
+  iseth: boolean;
+  extradata: string;
+  remotetoken: string;
+  localtoken: string;
   blocknumber: number;
-  addressContract: string;
+  addresscontract: string;
   version: string;
 }
 
 export interface EventWithdrawal {
-  l1receiverken: string;
-  l2receiverken: string;
+  l1token: string;
+  l2token: string;
   sender: string;
   receiver: string;
   amount: string;
-  extraData: string;
-  transactionHash: string;
+  extradata: string;
+  transactionhash: string;
   blocknumber: number;
-  addressContract: string;
+  addresscontract: string;
 }

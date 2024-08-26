@@ -28,29 +28,50 @@ app.use(cors(corsOptions));
 // Function to query deposits
 app.get('/deposit', async (req: Request, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 10; // Validate and default to 10 if invalid
+    const limit = parseInt(req.query.limit as string) || 10; // Number of records per page
+    const page = parseInt(req.query.page as string) || 1; // Current page number
     const sender = (req.query.sender as string) || '';
     const receiver = (req.query.receiver as string) || '';
 
-    let query = 'SELECT * FROM deposit';
+    // Validate page and limit values
+    if (page < 1 || limit < 1) {
+      return res.status(400).json({ error: 'Page and limit must be positive numbers' });
+    }
+
+    let baseQuery = 'FROM deposit';
     const params: (string | number)[] = [];
 
     if (sender && receiver) {
-      query += ' WHERE "sender" = $1 OR "receiver" = $2';
+      baseQuery += ' WHERE "sender" = $1 OR "receiver" = $2';
       params.push(sender, receiver);
     } else if (sender) {
-      query += ' WHERE "sender" = $1';
+      baseQuery += ' WHERE "sender" = $1';
       params.push(sender);
     } else if (receiver) {
-      query += ' WHERE "receiver" = $1';
+      baseQuery += ' WHERE "receiver" = $1';
       params.push(receiver);
     }
 
-    query += ' ORDER BY blockNumber DESC LIMIT $' + (params.length + 1);
-    params.push(limit);
+    // Get the total number of items
+    const totalItemsQuery = `SELECT COUNT(*) AS totalItems ${baseQuery}`;
+    const totalItemsResult = await pool.query(totalItemsQuery, params);
+    const totalItems = parseInt(totalItemsResult.rows[0].totalitems, 10);
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    // Calculate total pages
+    const totalPages = Math.ceil(totalItems / limit);
+    const offset = (page - 1) * limit;
+
+    // Fetch the items for the current page
+    const dataQuery = `SELECT * ${baseQuery} ORDER BY blockNumber DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit, offset);
+    const dataResult = await pool.query(dataQuery, params);
+
+    res.json({
+      totalItems,
+      totalPages,
+      currentPage: page,
+      items: dataResult.rows,
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });
@@ -59,29 +80,50 @@ app.get('/deposit', async (req: Request, res: Response) => {
 
 app.get('/withdrawal', async (req: Request, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 10; // Validate and default to 10 if invalid
+    const limit = parseInt(req.query.limit as string) || 10; // Number of records per page
+    const page = parseInt(req.query.page as string) || 1; // Current page number
     const sender = (req.query.sender as string) || '';
     const receiver = (req.query.receiver as string) || '';
 
-    let query = 'SELECT * FROM withdrawal';
+    // Validate page and limit values
+    if (page < 1 || limit < 1) {
+      return res.status(400).json({ error: 'Page and limit must be positive numbers' });
+    }
+
+    let baseQuery = 'FROM withdrawal';
     const params: (string | number)[] = [];
 
     if (sender && receiver) {
-      query += ' WHERE "sender" = $1 OR "receiver" = $2';
+      baseQuery += ' WHERE "sender" = $1 OR "receiver" = $2';
       params.push(sender, receiver);
     } else if (sender) {
-      query += ' WHERE "sender" = $1';
+      baseQuery += ' WHERE "sender" = $1';
       params.push(sender);
     } else if (receiver) {
-      query += ' WHERE "receiver" = $1';
+      baseQuery += ' WHERE "receiver" = $1';
       params.push(receiver);
     }
 
-    query += ' ORDER BY blockNumber DESC LIMIT $' + (params.length + 1);
-    params.push(limit);
+    // Get the total number of items
+    const totalItemsQuery = `SELECT COUNT(*) AS totalItems ${baseQuery}`;
+    const totalItemsResult = await pool.query(totalItemsQuery, params);
+    const totalItems = parseInt(totalItemsResult.rows[0].totalitems, 10);
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    // Calculate total pages
+    const totalPages = Math.ceil(totalItems / limit);
+    const offset = (page - 1) * limit;
+
+    // Fetch the items for the current page
+    const dataQuery = `SELECT * ${baseQuery} ORDER BY blockNumber DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit, offset);
+    const dataResult = await pool.query(dataQuery, params);
+
+    res.json({
+      totalItems,
+      totalPages,
+      currentPage: page,
+      items: dataResult.rows,
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });
