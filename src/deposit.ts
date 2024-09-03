@@ -1,7 +1,15 @@
 import { Pool } from 'pg';
 import { portalABI } from './abi/portalABI';
 import { ENV } from './constant';
-import { formatSeconds, insertEventDeposit, testConnection } from './utils';
+import {
+  formatSeconds,
+  getTracker,
+  insertEventDeposit,
+  updateTracker,
+  testConnection,
+  insertEventWithdrawProve,
+  insertEventWithdrawFinalize,
+} from './utils';
 import { publicClientL1 } from './utils/chain';
 import { InvalidParamsRpcError } from 'viem';
 import pool from './utils/db';
@@ -9,7 +17,9 @@ const sleep = require('util').promisify(setTimeout);
 
 // const MAX_RETRIES = 5;
 let estimateTime = 0;
-const LIMIT_BLOCK = ENV.L1_LIMIT_BLOCKS ? Number(ENV.L1_LIMIT_BLOCKS) : 10000000;
+const LIMIT_BLOCK = ENV.L1_LIMIT_BLOCKS
+  ? Number(ENV.L1_LIMIT_BLOCKS)
+  : 10000000;
 
 async function main() {
   await testConnection(pool);
@@ -47,37 +57,9 @@ async function main() {
 
   // Start both fetchEvents and startWatching in parallel
   await Promise.all([
-    fetchPastEvents(BigInt(0), BigInt(LIMIT)), // Fetch past events
+    fetchPastEvents(BigInt(ENV.L1_PORTAL_BLOCK_CREATED), BigInt(LIMIT)), // Fetch past events
     fetchRealTimeEvents(BigInt(LIMIT)), // Start watching for real-time events
   ]);
-}
-
-async function getLastProcessedRealTimeBlock() {
-  const res = await pool.query(
-    'SELECT last_block FROM real_time_tracker_deposit ORDER BY id DESC LIMIT 1'
-  );
-  return res.rows.length > 0 ? BigInt(res.rows[0].last_block) : null;
-}
-
-async function saveLastProcessedRealTimeBlock(blockNumber) {
-  await pool.query(
-    'INSERT INTO real_time_tracker_deposit (last_block) VALUES ($1)',
-    [blockNumber.toString()]
-  );
-}
-
-async function getLastProcessedPastBlock() {
-  const res = await pool.query(
-    'SELECT last_block FROM past_event_tracker_deposit ORDER BY id DESC LIMIT 1'
-  );
-  return res.rows.length > 0 ? BigInt(res.rows[0].last_block) : null;
-}
-
-async function saveLastProcessedPastBlock(blockNumber) {
-  await pool.query(
-    'INSERT INTO past_event_tracker_deposit (last_block) VALUES ($1)',
-    [blockNumber.toString()]
-  );
 }
 
 async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
@@ -114,9 +96,71 @@ async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
   }
 }
 
+async function getEventProveLogs(fromBlock: bigint, toBlock: bigint) {
+  // get Logs
+  const logs = await publicClientL1.getContractEvents({
+    address: ENV.L1_PORTAL_ADDRESS,
+    abi: portalABI,
+    eventName: 'WithdrawalProven',
+    fromBlock,
+    toBlock,
+  });
+
+  for (const log of logs) {
+    const { withdrawalHash } = log.args;
+    const { transactionHash, blockNumber } = log;
+
+    // console.log(event);
+
+    const event = {
+      transactionHash,
+      withdrawalHash,
+      blockNumber,
+    };
+
+    try {
+      await insertEventWithdrawProve(pool, event);
+      // console.log(`Event inserted successfully hash : ${transactionHash}`);
+    } catch (err) {
+      // console.error('Error inserting event deposit:', err);
+    }
+  }
+}
+
+async function getEventFinalizeLogs(fromBlock: bigint, toBlock: bigint) {
+  // get Logs
+  const logs = await publicClientL1.getContractEvents({
+    address: ENV.L1_PORTAL_ADDRESS,
+    abi: portalABI,
+    eventName: 'WithdrawalFinalized',
+    fromBlock,
+    toBlock,
+  });
+
+  for (const log of logs) {
+    const { withdrawalHash } = log.args;
+    const { transactionHash, blockNumber } = log;
+
+    // console.log(event);
+
+    const event = {
+      transactionHash,
+      withdrawalHash,
+      blockNumber,
+    };
+
+    try {
+      await insertEventWithdrawFinalize(pool, event);
+      // console.log(`Event inserted successfully hash : ${transactionHash}`);
+    } catch (err) {
+      // console.error('Error inserting event deposit:', err);
+    }
+  }
+}
+
 async function fetchRealTimeEvents(BLOCK_STEP: bigint) {
   try {
-    let lastProcessedBlock = await getLastProcessedRealTimeBlock();
+    let lastProcessedBlock = await getTracker(pool, 'real_time_deposit');
 
     if (lastProcessedBlock === null) {
       lastProcessedBlock = await publicClientL1.getBlockNumber();
@@ -135,9 +179,11 @@ async function fetchRealTimeEvents(BLOCK_STEP: bigint) {
         );
 
         await getEventsLogs(fromBlock, toBlockmin);
+        await getEventProveLogs(fromBlock, toBlockmin);
+        await getEventFinalizeLogs(fromBlock, toBlockmin);
 
         lastProcessedBlock = toBlockmin;
-        await saveLastProcessedRealTimeBlock(lastProcessedBlock);
+        await updateTracker(pool, lastProcessedBlock, 'real_time_deposit');
         console.log(
           `Processed and saved real-time events up to block ${lastProcessedBlock}`
         );
@@ -155,7 +201,7 @@ async function fetchRealTimeEvents(BLOCK_STEP: bigint) {
 async function fetchPastEvents(finalBlock: bigint, BLOCK_STEP: bigint) {
   try {
     let currentBlock = await publicClientL1.getBlockNumber();
-    let fromBlock = await getLastProcessedPastBlock();
+    let fromBlock = await getTracker(pool, 'past_time_deposit');
 
     if (fromBlock === null || fromBlock > currentBlock) {
       fromBlock = currentBlock;
@@ -176,7 +222,17 @@ async function fetchPastEvents(finalBlock: bigint, BLOCK_STEP: bigint) {
         toBlock < currentBlock ? toBlock : currentBlock
       );
 
-      await saveLastProcessedPastBlock(toBlock);
+      await getEventProveLogs(
+        fromBlock,
+        toBlock < currentBlock ? toBlock : currentBlock
+      );
+
+      await getEventFinalizeLogs(
+        fromBlock,
+        toBlock < currentBlock ? toBlock : currentBlock
+      );
+
+      await updateTracker(pool, toBlock, 'past_time_deposit');
 
       // Update current block in case it's changed
       currentBlock = await publicClientL1.getBlockNumber();

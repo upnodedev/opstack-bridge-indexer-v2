@@ -4,6 +4,7 @@ import 'dotenv/config';
 import { ethers } from 'ethers';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { ENV } from '../constant';
+import { publicActionsL2, publicActionsL1 } from "viem/op-stack";
 
 export const RPC_URLS_L1 = [
   ENV.L1_RPC_URL_1,
@@ -50,12 +51,12 @@ export const l2ChainConfig: Chain = {
 export const publicClientL1 = createPublicClient({
   chain: l1ChainConfig,
   transport: http(),
-});
+}).extend(publicActionsL1());;
 
 export const publicClientL2 = createPublicClient({
   chain: l2ChainConfig,
   transport: http(),
-});
+}).extend(publicActionsL2());;
 
 
 export const StandartBridgeABI = [

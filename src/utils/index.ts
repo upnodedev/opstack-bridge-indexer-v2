@@ -1,6 +1,8 @@
 import { Pool, PoolClient } from 'pg';
 import { decodeOpqdata } from './decodeOpaquedata';
 import { ENV } from '../constant';
+import { publicClientL2 } from './chain';
+import { getWithdrawals } from 'viem/op-stack';
 
 const sleep = require('util').promisify(setTimeout);
 
@@ -76,6 +78,14 @@ export const insertEventWithdraw = async (db, event) => {
 
   const client = await db.connect();
 
+  const receipt = await publicClientL2.getTransactionReceipt({
+    hash: transactionHash,
+  });
+
+  const [withdrawal] = getWithdrawals({ logs: receipt.logs });
+
+  const withdrawalHash = withdrawal.withdrawalHash;
+
   try {
     const query = `
       INSERT INTO withdrawal (
@@ -87,8 +97,10 @@ export const insertEventWithdraw = async (db, event) => {
         blockNumber, 
         addressContract, 
         l1Token, 
-        l2Token
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
+        l2Token,
+        withdrawalHash,
+        transactionType
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'withdrawal')`;
 
     const value = [
       transactionHash,
@@ -100,11 +112,58 @@ export const insertEventWithdraw = async (db, event) => {
       address,
       l1Token,
       l2Token,
+      withdrawalHash,
     ];
 
     await client.query(query, value);
   } catch (err) {
     console.info(`Duplicate event ${transactionHash}`);
+  } finally {
+    client.release();
+  }
+};
+
+export const insertEventWithdrawProve = async (db, event) => {
+  const { transactionHash, withdrawalHash, blockNumber } = event;
+
+  const client = await db.connect();
+
+  try {
+    const query = `
+      INSERT INTO prove_transactions (
+        transactionHash, 
+        withdrawalHash, 
+        blockNumber
+      ) VALUES ($1, $2, $3)`;
+
+    const value = [transactionHash, withdrawalHash, blockNumber];
+
+    await client.query(query, value);
+  } catch (err) {
+    console.info(`Duplicate prove event ${transactionHash}`);
+  } finally {
+    client.release();
+  }
+};
+
+export const insertEventWithdrawFinalize = async (db, event) => {
+  const { transactionHash, withdrawalHash, blockNumber } = event;
+
+  const client = await db.connect();
+
+  try {
+    const query = `
+      INSERT INTO finalize_transactions (
+        transactionHash, 
+        withdrawalHash, 
+        blockNumber
+      ) VALUES ($1, $2, $3)`;
+
+    const value = [transactionHash, withdrawalHash, blockNumber];
+
+    await client.query(query, value);
+  } catch (err) {
+    console.info(`Duplicate finalize event ${transactionHash}`);
   } finally {
     client.release();
   }
@@ -143,19 +202,20 @@ export const insertEventDeposit = async (db: Pool, event) => {
 
   try {
     const query = `
-      INSERT INTO deposit (
+      INSERT INTO transactions (
         transactionHash, 
         sender, 
         receiver, 
-        amount,
-        iseth,
-        extradata,
-        remotetoken,
-        localtoken,
-        blocknumber, 
-        addresscontract, 
-        version
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`;
+        amount, 
+        isEth, 
+        extraData, 
+        remoteToken, 
+        localToken, 
+        blockNumber, 
+        addressContract, 
+        version,
+        transactionType
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'deposit')`;
 
     const value = [
       transactionHash,
@@ -173,6 +233,7 @@ export const insertEventDeposit = async (db: Pool, event) => {
 
     await client.query(query, value);
   } catch (err) {
+    console.log(err);
     console.info(`Duplicate event ${transactionHash}`);
   } finally {
     client.release();
@@ -190,5 +251,53 @@ export const testConnection = async (pool: Pool): Promise<void> => {
     throw err;
   } finally {
     client?.release();
+  }
+};
+
+export type ConfigType =
+  | 'real_time_deposit'
+  | 'past_time_deposit'
+  | 'real_time_withdrawal_initiated'
+  | 'past_time_withdrawal_initiated'
+  | 'real_time_withdrawal_proven'
+  | 'past_time_withdrawal_proven'
+  | 'real_time_withdrawal_finalized'
+  | 'past_time_withdrawal_finalized';
+
+export const getTracker = async (
+  pool: Pool,
+  config: ConfigType
+): Promise<bigint | null> => {
+  const client = await pool.connect();
+  try {
+    const query = 'SELECT last_block FROM tracker WHERE config = $1';
+    const result = await client.query(query, [config]);
+    return result.rows.length > 0
+      ? !result.rows[0].last_block
+        ? null
+        : BigInt(result.rows[0].last_block)
+      : null;
+  } catch (err) {
+    console.error('Error getting last processed block:', err);
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+export const updateTracker = async (
+  pool: Pool,
+  blockNumber: bigint,
+  config: ConfigType
+): Promise<void> => {
+  const client = await pool.connect();
+  try {
+    const query = 'UPDATE tracker SET last_block = $1 WHERE config = $2';
+    await client.query(query, [blockNumber.toString(), config]);
+  } catch (err) {
+    console.error('Error updating last processed block:', err);
+    throw err;
+  } finally {
+    client.release();
   }
 };

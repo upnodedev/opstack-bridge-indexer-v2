@@ -1,6 +1,12 @@
 import { Pool } from 'pg';
 import { ENV } from './constant';
-import { formatSeconds, insertEventWithdraw, testConnection } from './utils';
+import {
+  formatSeconds,
+  getTracker,
+  insertEventWithdraw,
+  testConnection,
+  updateTracker,
+} from './utils';
 import { publicClientL2 } from './utils/chain';
 import { InvalidParamsRpcError } from 'viem';
 import pool from './utils/db';
@@ -9,7 +15,9 @@ const sleep = require('util').promisify(setTimeout);
 
 // const MAX_RETRIES = 5;
 // let estimateTime = 0;
-const LIMIT_BLOCK = ENV.L2_LIMIT_BLOCKS ? Number(ENV.L2_LIMIT_BLOCKS) : 10000000;
+const LIMIT_BLOCK = ENV.L2_LIMIT_BLOCKS
+  ? Number(ENV.L2_LIMIT_BLOCKS)
+  : 10000000;
 
 async function main() {
   await testConnection(pool);
@@ -50,37 +58,9 @@ async function main() {
 
   // Start both fetchEvents and startWatching in parallel
   await Promise.all([
-    fetchPastEvents(BigInt(0), BigInt(LIMIT)), // Fetch past events
+    fetchPastEvents(BigInt(ENV.L2_STANDARD_BRIDGE_BLOCK_CREATED), BigInt(LIMIT)), // Fetch past events
     fetchRealTimeEvents(BigInt(LIMIT)), // Start watching for real-time events
   ]);
-}
-
-async function getLastProcessedRealTimeBlock() {
-  const res = await pool.query(
-    'SELECT last_block FROM real_time_tracker_withdrawal ORDER BY id DESC LIMIT 1'
-  );
-  return res.rows.length > 0 ? BigInt(res.rows[0].last_block) : null;
-}
-
-async function saveLastProcessedRealTimeBlock(blockNumber) {
-  await pool.query(
-    'INSERT INTO real_time_tracker_withdrawal (last_block) VALUES ($1)',
-    [blockNumber.toString()]
-  );
-}
-
-async function getLastProcessedPastBlock() {
-  const res = await pool.query(
-    'SELECT last_block FROM past_event_tracker_withdrawal ORDER BY id DESC LIMIT 1'
-  );
-  return res.rows.length > 0 ? BigInt(res.rows[0].last_block) : null;
-}
-
-async function saveLastProcessedPastBlock(blockNumber) {
-  await pool.query(
-    'INSERT INTO past_event_tracker_withdrawal (last_block) VALUES ($1)',
-    [blockNumber.toString()]
-  );
 }
 
 async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
@@ -121,7 +101,10 @@ async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
 
 async function fetchRealTimeEvents(BLOCK_STEP: bigint) {
   try {
-    let lastProcessedBlock = await getLastProcessedRealTimeBlock();
+    let lastProcessedBlock = await getTracker(
+      pool,
+      'real_time_withdrawal_initiated'
+    );
 
     if (lastProcessedBlock === null) {
       lastProcessedBlock = await publicClientL2.getBlockNumber();
@@ -142,7 +125,11 @@ async function fetchRealTimeEvents(BLOCK_STEP: bigint) {
         await getEventsLogs(fromBlock, toBlockmin);
 
         lastProcessedBlock = toBlockmin;
-        await saveLastProcessedRealTimeBlock(lastProcessedBlock);
+        await updateTracker(
+          pool,
+          lastProcessedBlock,
+          'real_time_withdrawal_initiated'
+        );
         console.log(
           `Processed and saved real-time events up to block ${lastProcessedBlock}`
         );
@@ -161,7 +148,7 @@ async function fetchPastEvents(finalBlock: bigint, BLOCK_STEP: bigint) {
   try {
     const startTime = Date.now();
     let currentBlock = await publicClientL2.getBlockNumber();
-    let fromBlock = await getLastProcessedPastBlock();
+    let fromBlock = await getTracker(pool, 'past_time_withdrawal_initiated');
 
     if (fromBlock === null || fromBlock > currentBlock) {
       fromBlock = currentBlock;
@@ -181,7 +168,7 @@ async function fetchPastEvents(finalBlock: bigint, BLOCK_STEP: bigint) {
         toBlock < currentBlock ? toBlock : currentBlock
       );
 
-      await saveLastProcessedPastBlock(toBlock);
+      await updateTracker(pool, fromBlock, 'past_time_withdrawal_initiated');
 
       // Update current block in case it's changed
       currentBlock = await publicClientL2.getBlockNumber();

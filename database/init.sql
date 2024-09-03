@@ -1,59 +1,60 @@
     BEGIN;
 
-    CREATE TABLE IF NOT EXISTS deposit (
+    CREATE TABLE IF NOT EXISTS transactions (
       transactionHash TEXT PRIMARY KEY,
-      sender TEXT,         -- Instead of "from"
-      receiver TEXT,       -- Instead of "to"
+      sender TEXT,         
+      receiver TEXT,       
       amount TEXT,
-      isEth BOOLEAN,
+      isEth BOOLEAN DEFAULT NULL,
       extraData TEXT,
-      remoteToken TEXT,
-      localToken TEXT,
-      blockNumber INTEGER,
+      remoteToken TEXT DEFAULT NULL,
+      localToken TEXT DEFAULT NULL,
+      blockNumber BIGINT,
       addressContract TEXT,
-      version TEXT
+      version TEXT DEFAULT NULL,
+      l1Token TEXT DEFAULT NULL,
+      l2Token TEXT DEFAULT NULL,
+      transactionType TEXT,  -- to distinguish between deposit and withdrawal
+      withdrawalHash TEXT DEFAULT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS withdrawal (
-      l1Token TEXT,
-      l2Token TEXT,
-      sender TEXT,
-      receiver TEXT,
-      amount TEXT,
-      extraData TEXT,
+    CREATE TABLE IF NOT EXISTS prove_transactions (
       transactionHash TEXT PRIMARY KEY,
-      blockNumber INTEGER,
-      addressContract TEXT
+      withdrawalHash TEXT,
+      blockNumber BIGINT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE real_time_tracker_deposit (
-    id SERIAL PRIMARY KEY,
-    last_block BIGINT NOT NULL,
-    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    CREATE TABLE IF NOT EXISTS finalize_transactions (
+      transactionHash TEXT PRIMARY KEY,
+      withdrawalHash TEXT,
+      blockNumber BIGINT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE past_event_tracker_deposit (
-        id SERIAL PRIMARY KEY,
-        last_block BIGINT NOT NULL,
-        processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE real_time_tracker_withdrawal (
-      id SERIAL PRIMARY KEY,
-      last_block BIGINT NOT NULL,
+    CREATE TABLE tracker(
+      config TEXT PRIMARY KEY,
+      last_block BIGINT,
       processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE past_event_tracker_withdrawal (
-        id SERIAL PRIMARY KEY,
-        last_block BIGINT NOT NULL,
-        processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+    -- create config
 
-    CREATE INDEX IF NOT EXISTS deposit_sender_index ON deposit (sender);
-    CREATE INDEX IF NOT EXISTS deposit_receiver_index ON deposit (receiver);
+    INSERT INTO tracker (config) VALUES ('real_time_deposit');
+    INSERT INTO tracker (config) VALUES ('past_time_deposit');
 
-    CREATE INDEX IF NOT EXISTS withdrawal_sender_index ON withdrawal (sender);
-    CREATE INDEX IF NOT EXISTS withdrawal_receiver_index ON withdrawal (receiver);
+    INSERT INTO tracker (config) VALUES ('real_time_withdrawal_initiated');
+    INSERT INTO tracker (config) VALUES ('past_time_withdrawal_initiated');
+
+    INSERT INTO tracker (config) VALUES ('real_time_withdrawal_proven');
+    INSERT INTO tracker (config) VALUES ('past_time_withdrawal_proven');
+
+    INSERT INTO tracker (config) VALUES ('real_time_withdrawal_finalized');
+    INSERT INTO tracker (config) VALUES ('past_time_withdrawal_finalized');
+
+    -- add index
+    CREATE INDEX IF NOT EXISTS transactions_withdrawal_hash_index ON transactions (withdrawalHash);
 
     COMMIT;
