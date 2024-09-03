@@ -11,6 +11,7 @@ import { publicClientL2 } from './utils/chain';
 import { InvalidParamsRpcError } from 'viem';
 import pool from './utils/db';
 import { L2StandardBridgeABI } from './abi/L2StandardBridgeABI';
+import { getWithdrawals } from 'viem/op-stack';
 const sleep = require('util').promisify(setTimeout);
 
 // const MAX_RETRIES = 5;
@@ -58,7 +59,10 @@ async function main() {
 
   // Start both fetchEvents and startWatching in parallel
   await Promise.all([
-    fetchPastEvents(BigInt(ENV.L2_STANDARD_BRIDGE_BLOCK_CREATED), BigInt(LIMIT)), // Fetch past events
+    fetchPastEvents(
+      BigInt(ENV.L2_STANDARD_BRIDGE_BLOCK_CREATED),
+      BigInt(LIMIT)
+    ), // Fetch past events
     fetchRealTimeEvents(BigInt(LIMIT)), // Start watching for real-time events
   ]);
 }
@@ -76,6 +80,15 @@ async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
   for (const log of logs) {
     const { l1Token, l2Token, from, to, amount, extraData } = log.args;
     const { transactionHash, address, blockNumber } = log;
+
+    const receipt = await publicClientL2.getTransactionReceipt({
+      hash: transactionHash,
+    });
+
+    const [withdrawal] = getWithdrawals({ logs: receipt.logs });
+
+    const withdrawalHash = withdrawal.withdrawalHash;
+
     const event = {
       l1Token,
       l2Token,
@@ -86,6 +99,7 @@ async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
       transactionHash,
       blockNumber: +blockNumber.toString(),
       address,
+      withdrawalHash,
     };
 
     // console.log(event);

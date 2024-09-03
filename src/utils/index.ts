@@ -74,21 +74,14 @@ export const insertEventWithdraw = async (db, event) => {
     transactionHash,
     blockNumber,
     address,
+    withdrawalHash,
   } = event;
 
   const client = await db.connect();
 
-  const receipt = await publicClientL2.getTransactionReceipt({
-    hash: transactionHash,
-  });
-
-  const [withdrawal] = getWithdrawals({ logs: receipt.logs });
-
-  const withdrawalHash = withdrawal.withdrawalHash;
-
   try {
     const query = `
-      INSERT INTO withdrawal (
+      INSERT INTO transactions (
         transactionHash, 
         sender, 
         receiver,  
