@@ -80,6 +80,7 @@ app.get('/transactions', async (req: Request, res: Response) => {
       localToken: row.localtoken,
       blockNumber: row.blocknumber,
       addressContract: row.addresscontract,
+      l2TransactionHash: row.l2transactionhash,
       version: row.version,
       transactionType: row.transactiontype,
       blockTimestamp: row.blocktimestamp,

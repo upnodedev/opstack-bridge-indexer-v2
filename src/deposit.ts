@@ -13,6 +13,7 @@ import {
 import { publicClientL1 } from './utils/chain';
 import { InvalidParamsRpcError } from 'viem';
 import pool from './utils/db';
+import { getL2TransactionHash } from 'viem/op-stack';
 const sleep = require('util').promisify(setTimeout);
 
 // const MAX_RETRIES = 5;
@@ -78,6 +79,8 @@ async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
     const block = await publicClientL1.getBlock({
       blockNumber: BigInt(blockNumber),
     });
+    const l2TransactionHash = getL2TransactionHash({ log });
+
     const blockTimestamp = block.timestamp * 1000n;
     const event = {
       from,
@@ -88,6 +91,7 @@ async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
       address,
       blockNumber: +blockNumber.toString(),
       blockTimestamp: +blockTimestamp.toString(),
+      l2TransactionHash,
     };
 
     // console.log(event);
@@ -125,7 +129,7 @@ async function getEventProveLogs(fromBlock: bigint, toBlock: bigint) {
       transactionHash,
       withdrawalHash,
       blockNumber,
-      blockTimestamp : +blockTimestamp.toString(),
+      blockTimestamp: +blockTimestamp.toString(),
     };
 
     try {
@@ -162,7 +166,7 @@ async function getEventFinalizeLogs(fromBlock: bigint, toBlock: bigint) {
       transactionHash,
       withdrawalHash,
       blockNumber,
-      blockTimestamp : +blockTimestamp.toString(),
+      blockTimestamp: +blockTimestamp.toString(),
     };
 
     try {

@@ -9,6 +9,7 @@
       extraData TEXT,
       remoteToken TEXT DEFAULT NULL,
       localToken TEXT DEFAULT NULL,
+      l2TransactionHash TEXT DEFAULT NULL,
       blockNumber BIGINT,
       blockTimestamp BIGINT,
       addressContract TEXT,

@@ -131,7 +131,12 @@ export const insertEventWithdrawProve = async (db, event) => {
         blockTimestamp
       ) VALUES ($1, $2, $3, $4)`;
 
-    const value = [transactionHash, withdrawalHash, blockNumber, blockTimestamp];
+    const value = [
+      transactionHash,
+      withdrawalHash,
+      blockNumber,
+      blockTimestamp,
+    ];
 
     await client.query(query, value);
   } catch (err) {
@@ -142,7 +147,8 @@ export const insertEventWithdrawProve = async (db, event) => {
 };
 
 export const insertEventWithdrawFinalize = async (db, event) => {
-  const { transactionHash, withdrawalHash, blockNumber , blockTimestamp} = event;
+  const { transactionHash, withdrawalHash, blockNumber, blockTimestamp } =
+    event;
 
   const client = await db.connect();
 
@@ -155,7 +161,12 @@ export const insertEventWithdrawFinalize = async (db, event) => {
         blockTimestamp
       ) VALUES ($1, $2, $3, $4)`;
 
-    const value = [transactionHash, withdrawalHash, blockNumber, blockTimestamp];
+    const value = [
+      transactionHash,
+      withdrawalHash,
+      blockNumber,
+      blockTimestamp,
+    ];
 
     await client.query(query, value);
   } catch (err) {
@@ -173,6 +184,7 @@ export const insertEventDeposit = async (db: Pool, event) => {
   const blockNumber = event.blockNumber;
   const blockTimestamp = event.blockTimestamp;
   const addressContract = event.address;
+  const l2TransactionHash = event.l2TransactionHash;
 
   let amount = decodeOpaque._value;
   let from = decodeOpaque._from ?? event.from;
@@ -212,8 +224,9 @@ export const insertEventDeposit = async (db: Pool, event) => {
         addressContract, 
         version,
         transactionType,
-        blockTimestamp
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'deposit', $12)`;
+        blockTimestamp,
+        l2TransactionHash
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'deposit', $12 , $13)`;
 
     const value = [
       transactionHash,
@@ -228,6 +241,7 @@ export const insertEventDeposit = async (db: Pool, event) => {
       addressContract,
       version,
       blockTimestamp,
+      l2TransactionHash,
     ];
 
     await client.query(query, value);
