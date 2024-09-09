@@ -9,7 +9,7 @@ import pool from './utils/db';
 
 // Create express app
 const app = express();
-const PORT = 3000 || ENV.PORT;
+const PORT = ENV.PORT || 3000;
 
 app.use(express.json());
 
@@ -55,16 +55,18 @@ app.get('/transactions', async (req: Request, res: Response) => {
         pt.transactionHash AS proveTransactionHash, 
         pt.blockNumber AS proveBlockNumber, 
         pt.created_at AS proveCreatedAt,
-        pt.blockTimestamp AS blockTimestamp,
+        pt.blockTimestamp AS proveBlockTimestamp,
         ft.transactionHash AS finalizeTransactionHash, 
         ft.blockNumber AS finalizeBlockNumber, 
         ft.created_at AS finalizeCreatedAt,
-        ft.blockTimestamp AS blockTimestamp
+        ft.blockTimestamp AS finalizeBlockTimestamp
       ${baseQuery}
       ORDER BY t.blockNumber DESC
     `;
     
     const transactionsResult = await pool.query(transactionsQuery, params);
+
+    console.log(transactionsResult.rows);
 
     // Transform the result to include prove and finalize as nested objects
     const transactions = transactionsResult.rows.map(row => ({
@@ -85,13 +87,13 @@ app.get('/transactions', async (req: Request, res: Response) => {
         transactionHash: row.provetransactionhash,
         blockNumber: row.proveblocknumber,
         createdAt: row.provecreatedat,
-        blockTimestamp: row.blockTimestamp
+        blockTimestamp: row.proveblocktimestamp
       } : null,
       finalize: row.finalizetransactionhash ? {
         transactionHash: row.finalizetransactionhash,
         blockNumber: row.finalizeblocknumber,
         createdAt: row.finalizecreatedat,
-        blockTimestamp: row.blockTimestamp
+        blockTimestamp: row.finalizeblocktimestamp
       } : null
     }));
 
