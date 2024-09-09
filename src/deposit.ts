@@ -75,6 +75,10 @@ async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
   for (const log of logs) {
     const { from, to, version, opaqueData } = log.args;
     const { transactionHash, address, blockNumber } = log;
+    const block = await publicClientL1.getBlock({
+      blockNumber: BigInt(blockNumber),
+    });
+    const blockTimestamp = block.timestamp * 1000n;
     const event = {
       from,
       to,
@@ -83,12 +87,14 @@ async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
       transactionHash,
       address,
       blockNumber: +blockNumber.toString(),
+      blockTimestamp: +blockTimestamp.toString(),
     };
 
     // console.log(event);
 
     try {
       await insertEventDeposit(pool, event);
+      await sleep(10);
       // console.log(`Event inserted successfully hash : ${transactionHash}`);
     } catch (err) {
       // console.error('Error inserting event deposit:', err);
@@ -110,16 +116,21 @@ async function getEventProveLogs(fromBlock: bigint, toBlock: bigint) {
     const { withdrawalHash } = log.args;
     const { transactionHash, blockNumber } = log;
 
-    // console.log(event);
+    const block = await publicClientL1.getBlock({
+      blockNumber: BigInt(blockNumber),
+    });
+    const blockTimestamp = block.timestamp * 1000n;
 
     const event = {
       transactionHash,
       withdrawalHash,
       blockNumber,
+      blockTimestamp : +blockTimestamp.toString(),
     };
 
     try {
       await insertEventWithdrawProve(pool, event);
+      await sleep(10);
       // console.log(`Event inserted successfully hash : ${transactionHash}`);
     } catch (err) {
       // console.error('Error inserting event deposit:', err);
@@ -140,6 +151,10 @@ async function getEventFinalizeLogs(fromBlock: bigint, toBlock: bigint) {
   for (const log of logs) {
     const { withdrawalHash } = log.args;
     const { transactionHash, blockNumber } = log;
+    const block = await publicClientL1.getBlock({
+      blockNumber: BigInt(blockNumber),
+    });
+    const blockTimestamp = block.timestamp * 1000n;
 
     // console.log(event);
 
@@ -147,10 +162,12 @@ async function getEventFinalizeLogs(fromBlock: bigint, toBlock: bigint) {
       transactionHash,
       withdrawalHash,
       blockNumber,
+      blockTimestamp : +blockTimestamp.toString(),
     };
 
     try {
       await insertEventWithdrawFinalize(pool, event);
+      await sleep(10);
       // console.log(`Event inserted successfully hash : ${transactionHash}`);
     } catch (err) {
       // console.error('Error inserting event deposit:', err);

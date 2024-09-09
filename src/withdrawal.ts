@@ -89,6 +89,11 @@ async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
 
     const withdrawalHash = withdrawal.withdrawalHash;
 
+    const block = await publicClientL2.getBlock({
+      blockNumber: BigInt(blockNumber),
+    });
+    const blockTimestamp = block.timestamp * 1000n;
+
     const event = {
       l1Token,
       l2Token,
@@ -100,12 +105,14 @@ async function getEventsLogs(fromBlock: bigint, toBlock: bigint) {
       blockNumber: +blockNumber.toString(),
       address,
       withdrawalHash,
+      blockTimestamp: +blockTimestamp.toString(),
     };
 
     // console.log(event);
 
     try {
       await insertEventWithdraw(pool, event);
+      await sleep(10);
       // console.log(`Event inserted successfully hash : ${transactionHash}`);
     } catch (err) {
       // console.error('Error inserting event deposit:', err);

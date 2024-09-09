@@ -10,6 +10,7 @@
       remoteToken TEXT DEFAULT NULL,
       localToken TEXT DEFAULT NULL,
       blockNumber BIGINT,
+      blockTimestamp BIGINT,
       addressContract TEXT,
       version TEXT DEFAULT NULL,
       l1Token TEXT DEFAULT NULL,
@@ -24,6 +25,7 @@
       transactionHash TEXT PRIMARY KEY,
       withdrawalHash TEXT,
       blockNumber BIGINT,
+      blockTimestamp BIGINT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -31,6 +33,7 @@
       transactionHash TEXT PRIMARY KEY,
       withdrawalHash TEXT,
       blockNumber BIGINT,
+      blockTimestamp BIGINT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 

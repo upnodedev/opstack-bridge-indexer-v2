@@ -1,8 +1,5 @@
 import { Pool, PoolClient } from 'pg';
 import { decodeOpqdata } from './decodeOpaquedata';
-import { ENV } from '../constant';
-import { publicClientL2 } from './chain';
-import { getWithdrawals } from 'viem/op-stack';
 
 const sleep = require('util').promisify(setTimeout);
 
@@ -75,6 +72,7 @@ export const insertEventWithdraw = async (db, event) => {
     blockNumber,
     address,
     withdrawalHash,
+    blockTimestamp,
   } = event;
 
   const client = await db.connect();
@@ -92,8 +90,9 @@ export const insertEventWithdraw = async (db, event) => {
         l1Token, 
         l2Token,
         withdrawalHash,
-        transactionType
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'withdrawal')`;
+        transactionType,
+        blockTimestamp
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'withdrawal', $11)`;
 
     const value = [
       transactionHash,
@@ -106,6 +105,7 @@ export const insertEventWithdraw = async (db, event) => {
       l1Token,
       l2Token,
       withdrawalHash,
+      blockTimestamp,
     ];
 
     await client.query(query, value);
@@ -117,7 +117,8 @@ export const insertEventWithdraw = async (db, event) => {
 };
 
 export const insertEventWithdrawProve = async (db, event) => {
-  const { transactionHash, withdrawalHash, blockNumber } = event;
+  const { transactionHash, withdrawalHash, blockNumber, blockTimestamp } =
+    event;
 
   const client = await db.connect();
 
@@ -126,10 +127,11 @@ export const insertEventWithdrawProve = async (db, event) => {
       INSERT INTO prove_transactions (
         transactionHash, 
         withdrawalHash, 
-        blockNumber
-      ) VALUES ($1, $2, $3)`;
+        blockNumber,
+        blockTimestamp
+      ) VALUES ($1, $2, $3, $4)`;
 
-    const value = [transactionHash, withdrawalHash, blockNumber];
+    const value = [transactionHash, withdrawalHash, blockNumber, blockTimestamp];
 
     await client.query(query, value);
   } catch (err) {
@@ -140,7 +142,7 @@ export const insertEventWithdrawProve = async (db, event) => {
 };
 
 export const insertEventWithdrawFinalize = async (db, event) => {
-  const { transactionHash, withdrawalHash, blockNumber } = event;
+  const { transactionHash, withdrawalHash, blockNumber , blockTimestamp} = event;
 
   const client = await db.connect();
 
@@ -149,10 +151,11 @@ export const insertEventWithdrawFinalize = async (db, event) => {
       INSERT INTO finalize_transactions (
         transactionHash, 
         withdrawalHash, 
-        blockNumber
-      ) VALUES ($1, $2, $3)`;
+        blockNumber,
+        blockTimestamp
+      ) VALUES ($1, $2, $3, $4)`;
 
-    const value = [transactionHash, withdrawalHash, blockNumber];
+    const value = [transactionHash, withdrawalHash, blockNumber, blockTimestamp];
 
     await client.query(query, value);
   } catch (err) {
@@ -168,6 +171,7 @@ export const insertEventDeposit = async (db: Pool, event) => {
   const transactionHash = event.transactionHash;
   const version = event.version;
   const blockNumber = event.blockNumber;
+  const blockTimestamp = event.blockTimestamp;
   const addressContract = event.address;
 
   let amount = decodeOpaque._value;
@@ -207,8 +211,9 @@ export const insertEventDeposit = async (db: Pool, event) => {
         blockNumber, 
         addressContract, 
         version,
-        transactionType
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'deposit')`;
+        transactionType,
+        blockTimestamp
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'deposit', $12)`;
 
     const value = [
       transactionHash,
@@ -222,6 +227,7 @@ export const insertEventDeposit = async (db: Pool, event) => {
       blockNumber,
       addressContract,
       version,
+      blockTimestamp,
     ];
 
     await client.query(query, value);
