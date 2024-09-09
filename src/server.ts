@@ -55,9 +55,11 @@ app.get('/transactions', async (req: Request, res: Response) => {
         pt.transactionHash AS proveTransactionHash, 
         pt.blockNumber AS proveBlockNumber, 
         pt.created_at AS proveCreatedAt,
+        pt.blockTimestamp AS blockTimestamp,
         ft.transactionHash AS finalizeTransactionHash, 
         ft.blockNumber AS finalizeBlockNumber, 
-        ft.created_at AS finalizeCreatedAt
+        ft.created_at AS finalizeCreatedAt,
+        ft.blockTimestamp AS blockTimestamp
       ${baseQuery}
       ORDER BY t.blockNumber DESC
     `;
@@ -78,15 +80,18 @@ app.get('/transactions', async (req: Request, res: Response) => {
       addressContract: row.addresscontract,
       version: row.version,
       transactionType: row.transactiontype,
+      blockTimestamp: row.blocktimestamp,
       prove: row.provetransactionhash ? {
         transactionHash: row.provetransactionhash,
         blockNumber: row.proveblocknumber,
-        createdAt: row.provecreatedat
+        createdAt: row.provecreatedat,
+        blockTimestamp: row.blockTimestamp
       } : null,
       finalize: row.finalizetransactionhash ? {
         transactionHash: row.finalizetransactionhash,
         blockNumber: row.finalizeblocknumber,
-        createdAt: row.finalizecreatedat
+        createdAt: row.finalizecreatedat,
+        blockTimestamp: row.blockTimestamp
       } : null
     }));
 
