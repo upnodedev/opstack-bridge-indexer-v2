@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "nodemon",
-    "db": "node dist/init.js",
     "build": "rimraf dist && tsc",
     "deposit": "node dist/deposit.js",
     "withdrawal": "node dist/withdrawal.js",
