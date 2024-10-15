@@ -1,5 +1,6 @@
 import { Pool, PoolClient } from 'pg';
 import { decodeOpqdata } from './decodeOpaquedata';
+import { ENV } from '../constant';
 
 const sleep = require('util').promisify(setTimeout);
 
@@ -80,14 +81,14 @@ export const insertEventWithdraw = async (db, event) => {
   try {
     const query = `
       INSERT INTO transactions (
-        transactionHash, 
-        sender, 
-        receiver,  
-        amount, 
-        extraData, 
-        blockNumber, 
-        addressContract, 
-        l1Token, 
+        transactionHash,
+        sender,
+        receiver,
+        amount,
+        extraData,
+        blockNumber,
+        addressContract,
+        l1Token,
         l2Token,
         withdrawalHash,
         transactionType,
@@ -125,8 +126,8 @@ export const insertEventWithdrawProve = async (db, event) => {
   try {
     const query = `
       INSERT INTO prove_transactions (
-        transactionHash, 
-        withdrawalHash, 
+        transactionHash,
+        withdrawalHash,
         blockNumber,
         blockTimestamp
       ) VALUES ($1, $2, $3, $4)`;
@@ -155,8 +156,8 @@ export const insertEventWithdrawFinalize = async (db, event) => {
   try {
     const query = `
       INSERT INTO finalize_transactions (
-        transactionHash, 
-        withdrawalHash, 
+        transactionHash,
+        withdrawalHash,
         blockNumber,
         blockTimestamp
       ) VALUES ($1, $2, $3, $4)`;
@@ -212,16 +213,16 @@ export const insertEventDeposit = async (db: Pool, event) => {
   try {
     const query = `
       INSERT INTO transactions (
-        transactionHash, 
-        sender, 
-        receiver, 
-        amount, 
-        isEth, 
-        extraData, 
-        remoteToken, 
-        localToken, 
-        blockNumber, 
-        addressContract, 
+        transactionHash,
+        sender,
+        receiver,
+        amount,
+        isEth,
+        extraData,
+        remoteToken,
+        localToken,
+        blockNumber,
+        addressContract,
         version,
         transactionType,
         blockTimestamp,
@@ -260,7 +261,7 @@ export const testConnection = async (pool: Pool): Promise<void> => {
     client = await pool.connect();
     console.log('Connected to the database successfully.');
   } catch (err) {
-    console.log('Error connecting to the database:', err);
+    console.log(`Error connecting to the database ${ENV.DATABASE_URL}`, err);
     throw err;
   } finally {
     client?.release();

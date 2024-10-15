@@ -21,6 +21,9 @@ const LIMIT_BLOCK = ENV.L2_LIMIT_BLOCKS
   : 10000000;
 
 async function main() {
+  console.log(
+    `Withdrawal indexer started ${ENV.L2_STANDARD_BRIDGE_ADDRESS} block ${ENV.L2_STANDARD_BRIDGE_BLOCK_CREATED} - ${LIMIT_BLOCK}`
+  );
   await testConnection(pool);
 
   let LIMIT = 0;
@@ -37,23 +40,7 @@ async function main() {
     LIMIT = LIMIT_BLOCK;
     console.log('Limit block:', LIMIT);
   } catch (error) {
-    if (error instanceof InvalidParamsRpcError) {
-      const detail = error.details;
-      // Use a regular expression to find a number followed by "block range"
-      const match = detail.match(/(\d+)\s*block\s*range/i);
-
-      if (match) {
-        const blockRangeValue = parseInt(match[1], 10);
-        console.log('Extracted block range value:', blockRangeValue);
-        LIMIT = blockRangeValue;
-      } else {
-        console.log('No block range value found in the string.');
-        throw error;
-      }
-    } else {
-      console.log('Error fetching events:', error);
-      throw error;
-    }
+    LIMIT = 1000;
   }
   await sleep(100);
 
@@ -199,15 +186,17 @@ async function fetchPastEvents(finalBlock: bigint, BLOCK_STEP: bigint) {
       // Estimate time to process the next batch
       const timeDiff = endTime - startTime;
 
-      // estimate time to finalBlock
-      const estimateTimeToFinalBlock =
-        (BigInt(timeDiff) * (fromBlock - finalBlock)) / BLOCK_STEP;
+      try {
+        // estimate time to finalBlock
+        const estimateTimeToFinalBlock =
+          (BigInt(timeDiff) * (fromBlock - finalBlock)) / BLOCK_STEP;
 
-      console.log(
-        `Processed and saved past events up to block ${toBlock} , estimate time : ${formatSeconds(
-          Number(estimateTimeToFinalBlock)
-        )}`
-      );
+        console.log(
+          `Processed and saved past events up to block ${toBlock} , estimate time : ${formatSeconds(
+            Number(estimateTimeToFinalBlock)
+          )}`
+        );
+      } catch (error) {}
     }
 
     console.log('fetchPastEvents: All past events processed.');

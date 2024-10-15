@@ -23,6 +23,9 @@ const LIMIT_BLOCK = ENV.L1_LIMIT_BLOCKS
   : 10000000;
 
 async function main() {
+  console.log(
+    `Deposit indexer started ${ENV.L1_PORTAL_ADDRESS} block ${ENV.L1_PORTAL_BLOCK_CREATED} - ${LIMIT_BLOCK}`
+  );
   await testConnection(pool);
 
   let LIMIT = 0;
@@ -37,22 +40,7 @@ async function main() {
       toBlock: BigInt(LIMIT_BLOCK),
     });
   } catch (error) {
-    if (error instanceof InvalidParamsRpcError) {
-      const detail = error.details;
-      // Use a regular expression to find a number followed by "block range"
-      const match = detail.match(/(\d+)\s*block\s*range/i);
-
-      if (match) {
-        const blockRangeValue = parseInt(match[1], 10);
-        console.log('Extracted block range value:', blockRangeValue);
-        LIMIT = blockRangeValue;
-      } else {
-        console.log('No block range value found in the string.');
-        throw error;
-      }
-    } else {
-      throw error;
-    }
+    LIMIT = 1000;
   }
   await sleep(100);
 
@@ -224,6 +212,8 @@ async function fetchPastEvents(finalBlock: bigint, BLOCK_STEP: bigint) {
     let currentBlock = await publicClientL1.getBlockNumber();
     let fromBlock = await getTracker(pool, 'past_time_deposit');
 
+    console.log(fromBlock, currentBlock);
+
     if (fromBlock === null || fromBlock > currentBlock) {
       fromBlock = currentBlock;
     }
@@ -263,14 +253,16 @@ async function fetchPastEvents(finalBlock: bigint, BLOCK_STEP: bigint) {
       const timeDiff = endTime - startTime;
 
       // estimate time to finalBlock
-      const estimateTimeToFinalBlock =
-        (BigInt(timeDiff) * (fromBlock - finalBlock)) / BLOCK_STEP;
+      try {
+        const estimateTimeToFinalBlock =
+          (BigInt(timeDiff) * (fromBlock - finalBlock)) / BLOCK_STEP;
 
-      console.log(
-        `Processed and saved past events up to block ${toBlock} , estimate time : ${formatSeconds(
-          Number(estimateTimeToFinalBlock)
-        )}`
-      );
+        console.log(
+          `Processed and saved past events up to block ${toBlock} , estimate time : ${formatSeconds(
+            Number(estimateTimeToFinalBlock)
+          )}`
+        );
+      } catch (error) {}
     }
 
     console.log(`fetchPastEvents: All past events processed.`);

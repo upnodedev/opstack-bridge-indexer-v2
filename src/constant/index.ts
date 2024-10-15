@@ -24,5 +24,5 @@ export const ENV = {
 
   PORT: +process.env.PORT || 3000,
 
-  DATABASE_URL: process.env.DATABASE_URL,
+  DATABASE_URL: `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.DATABASE_URL}/${process.env.POSTGRES_DB}`,
 };
