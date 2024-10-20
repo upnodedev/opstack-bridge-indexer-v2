@@ -8,13 +8,9 @@ import { publicActionsL2, publicActionsL1 } from "viem/op-stack";
 
 export const RPC_URLS_L1 = [
   ENV.L1_RPC_URL_1,
-  ENV.L1_RPC_URL_2,
-  ENV.L1_RPC_URL_3,
 ];
 export const RPC_URLS_L2 = [
   ENV.L2_RPC_URL_1,
-  ENV.L2_RPC_URL_2,
-  ENV.L2_RPC_URL_3,
 ];
 
 // clone of mainnet and edit the chainId
