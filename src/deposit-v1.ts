@@ -170,7 +170,6 @@ async function getEventFinalizeLogs(fromBlock: bigint, toBlock: bigint) {
 async function fetchRealTimeEvents(BLOCK_STEP: bigint) {
   try {
     let lastProcessedBlock = await getTracker(pool, 'real_time_deposit');
-    console.log('lastProcessedBlock', lastProcessedBlock);
 
     if (lastProcessedBlock === null) {
       lastProcessedBlock = await publicClientL1.getBlockNumber();
@@ -179,30 +178,28 @@ async function fetchRealTimeEvents(BLOCK_STEP: bigint) {
     while (true) {
       const currentBlock = await publicClientL1.getBlockNumber();
 
-      if (lastProcessedBlock < currentBlock) {
-        const fromBlock = lastProcessedBlock;
-        const toBlock =
-          fromBlock + BLOCK_STEP > currentBlock
-            ? currentBlock
-            : fromBlock + BLOCK_STEP;
+      while (lastProcessedBlock < currentBlock) {
+        const fromBlock = lastProcessedBlock + 1n;
+        const toBlock = fromBlock + BLOCK_STEP - 1n;
+        const toBlockmin = toBlock < currentBlock ? toBlock : currentBlock;
+
         console.log(
-          `Fetching real-time events from block ${fromBlock} to ${toBlock} (${
-            toBlock - fromBlock
-          }) currentBlock: ${currentBlock}`
+          `Fetching real-time events from block ${fromBlock} to ${toBlockmin}`
         );
 
-        await getEventsLogs(fromBlock, toBlock);
-        await getEventProveLogs(fromBlock, toBlock);
-        await getEventFinalizeLogs(fromBlock, toBlock);
+        await getEventsLogs(fromBlock, toBlockmin);
+        await getEventProveLogs(fromBlock, toBlockmin);
+        await getEventFinalizeLogs(fromBlock, toBlockmin);
 
-        await updateTracker(pool, toBlock, 'real_time_deposit');
-
-        lastProcessedBlock = toBlock;
-
-        await sleep(1000);
+        lastProcessedBlock = toBlockmin;
+        await updateTracker(pool, lastProcessedBlock, 'real_time_deposit');
+        console.log(
+          `Processed and saved real-time events up to block ${lastProcessedBlock}`
+        );
       }
 
-      await sleep(5000);
+      // Wait for a minute before checking again
+      await new Promise((resolve) => setTimeout(resolve, 10000));
     }
   } catch (error) {
     console.error('Error in fetchRealTimeEvents:', error);
@@ -221,13 +218,6 @@ async function fetchPastEvents(finalBlock: bigint, BLOCK_STEP: bigint) {
       fromBlock = currentBlock;
     }
 
-    console.log(
-      fromBlock,
-      finalBlock,
-      fromBlock - finalBlock,
-      fromBlock > finalBlock
-    );
-
     while (fromBlock > finalBlock) {
       const startTime = Date.now();
       const toBlock = fromBlock;
@@ -236,11 +226,7 @@ async function fetchPastEvents(finalBlock: bigint, BLOCK_STEP: bigint) {
           ? fromBlock - BLOCK_STEP
           : finalBlock;
 
-      console.log(
-        `Fetching past events from block ${fromBlock} to ${toBlock} (${
-          toBlock - fromBlock
-        })`
-      );
+      console.log(`Fetching past events from block ${fromBlock} to ${toBlock}`);
 
       await getEventsLogs(
         fromBlock,

@@ -26,7 +26,7 @@ async function main() {
   );
   await testConnection(pool);
 
-  let LIMIT = LIMIT_BLOCK;
+  let LIMIT = 0;
 
   // check limit block
   try {
@@ -122,31 +122,29 @@ async function fetchRealTimeEvents(BLOCK_STEP: bigint) {
       const currentBlock = await publicClientL2.getBlockNumber();
 
       while (lastProcessedBlock < currentBlock) {
-        const fromBlock = lastProcessedBlock;
-        const toBlock =
-        fromBlock + BLOCK_STEP > currentBlock
-          ? currentBlock
-          : fromBlock + BLOCK_STEP;
+        const fromBlock = lastProcessedBlock + 1n;
+        const toBlock = fromBlock + BLOCK_STEP - 1n;
+        const toBlockmin = toBlock < currentBlock ? toBlock : currentBlock;
 
-          console.log(
-            `Fetching real-time events from block ${fromBlock} to ${toBlock} (${
-              toBlock - fromBlock
-            }) currentBlock: ${currentBlock}`
-          );
+        console.log(
+          `Fetching real-time events from block ${fromBlock} to ${toBlockmin}`
+        );
 
-        await getEventsLogs(fromBlock, toBlock);
+        await getEventsLogs(fromBlock, toBlockmin);
 
+        lastProcessedBlock = toBlockmin;
         await updateTracker(
           pool,
           lastProcessedBlock,
           'real_time_withdrawal_initiated'
         );
-        lastProcessedBlock = toBlock;
-
-        await sleep(1000);
+        console.log(
+          `Processed and saved real-time events up to block ${lastProcessedBlock}`
+        );
       }
 
-      await sleep(5000);
+      // Wait for a minute before checking again
+      await new Promise((resolve) => setTimeout(resolve, 10000));
     }
   } catch (error) {
     console.error('Error in fetchRealTimeEvents:', error);
